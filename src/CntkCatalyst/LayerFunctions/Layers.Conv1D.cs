@@ -32,7 +32,7 @@ namespace CntkCatalyst.LayerFunctions
                     filterCount
                 };
 
-                autoPadding = CreateFilledBoolVector(filterSizes.Length, false);
+                autoPadding = CntkUtils.CreateFilledBoolVector(filterSizes.Length, false);
             }
             else
             {
@@ -42,11 +42,11 @@ namespace CntkCatalyst.LayerFunctions
                     filterCount
                 };
 
-                autoPadding = CreateFilledBoolVector(1, false);
+                autoPadding = CntkUtils.CreateFilledBoolVector(1, false);
             }
 
             var filterStrides = new int[] { strideShape };
-            var sharing = CreateFilledBoolVector(filterStrides.Length, true);
+            var sharing = CntkUtils.CreateFilledBoolVector(filterStrides.Length, true);
             var dilation = new int[] { 1 };
 
             var weights = new Parameter(NDShape.CreateNDShape(filterSizes), dataType,
@@ -69,16 +69,6 @@ namespace CntkCatalyst.LayerFunctions
             }
 
             return result;
-        }
-
-        internal static BoolVector CreateFilledBoolVector(int size, bool fill)
-        {
-            var boolVector = new BoolVector(size);
-            for (int i = 0; i < size; i++)
-            {
-                boolVector.Add(fill);
-            }
-            return boolVector;
         }
     }
 }
