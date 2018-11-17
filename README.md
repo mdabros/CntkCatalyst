@@ -1,6 +1,8 @@
 
 CntkCatalyst
 =================
+![Build status](https://machinelearning.visualstudio.com/cntkcatalyst-build/_apis/build/status/cntkcatalyst-github-build?branchName=master)
+
 CntkCatalyst is an ongoing effort to learn about the [Python Keras API](https://github.com/keras-team/keras),
 while trying to reproduce the functionality in a CNTK based C# API.
 The approach is to reproduce the Keras examples from the book/notebook [Deep Learning With Python](https://github.com/fchollet/deep-learning-with-python-notebooks),
