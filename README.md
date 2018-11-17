@@ -95,4 +95,4 @@ Contributions are welcome in the following areas:
  2. Implement additional functionality in *CntkCatalyst*, by creating a pull request. 
  3. Implement additional examples in *CntkCatalyst.Examples*, by creating a pull request. 
  
-When contributing, please follow the contribution guide.
+When contributing, please follow the [contribution guide](https://github.com/mdabros/CntkCatalyst/blob/master/CONTRIBUTING.md).
