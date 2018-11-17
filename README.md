@@ -18,10 +18,10 @@ However, these are implemented using the raw CNTK C# API directly,
 which does not provide a very desirable user experience. 
 
 Hopefully, when the end-goal has been reached, The CntkCatalyst API 
-will provide a deep learning experience in C#, very close to what you get with Keras in Python today.
+will provide a deep learning experience in C#, very close to what you get with Keras in Python.
 
 Since this is an ongoing effort, the API under development can be expected to change a lot,
-and should **not** be considered production quality yet.
+and should **not** be considered as production ready.
 
 Below, an example from the Keras python  API is reproduced using the current
 CntkCatalyst C# API:
