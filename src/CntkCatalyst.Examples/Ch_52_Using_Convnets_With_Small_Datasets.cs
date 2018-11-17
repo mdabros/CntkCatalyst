@@ -99,7 +99,7 @@ namespace CntkCatalyst.Examples
                 validationMinibatchSource: validationSource);
 
             // Evaluate the model using the test set.
-            (var loss, var metric) = model.Evaluate(testSource);
+            var (loss, metric) = model.Evaluate(testSource);
 
             // Write the test set loss and metric to debug output.
             Trace.WriteLine($"Test set - Loss: {loss}, Metric: {metric}");
