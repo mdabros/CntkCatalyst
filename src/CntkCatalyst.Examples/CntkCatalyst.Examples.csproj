@@ -81,6 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ch_21_First_Look_At_A_Neural_Network.cs" />
+    <Compile Include="Ch_62_Understanding_Recurrent_Neural_Networks.cs" />
     <Compile Include="Ch_64_Sequence_Processing_With_Convnets.cs" />
     <Compile Include="Ch_61_Using_Word_Embeddings.cs" />
     <Compile Include="Ch_51_Introduction_To_Convnets.cs" />
