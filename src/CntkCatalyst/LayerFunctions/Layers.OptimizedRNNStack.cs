@@ -38,7 +38,7 @@ namespace CntkCatalyst.LayerFunctions
                 weightInitializer, bidirectional, device, dataType, name);
         }
 
-        public static Function SimpleRNNWithRelu(this Function input, int units, int layerCount,
+        public static Function SimpleReluRNNStack(this Function input, int units, int layerCount,
             CNTKDictionary weightInitializer,
             bool bidirectional,
             DeviceDescriptor device,
@@ -49,7 +49,7 @@ namespace CntkCatalyst.LayerFunctions
                 weightInitializer, bidirectional, device, dataType, name);
         }
 
-        public static Function SimpleRNNWithTanh(this Function input, int units, int layerCount,
+        public static Function SimpleTanhRNNStack(this Function input, int units, int layerCount,
             CNTKDictionary weightInitializer,
             bool bidirectional,
             DeviceDescriptor device,
