@@ -73,8 +73,14 @@ namespace CntkCatalyst.LayerFunctions
                 throw new NotSupportedException($"OptimizedRNNStack only supports GPU. Device was: {device.Type}");
             }
 
-            var inputShape = input.Output.Shape;
-            var weights = new Parameter(inputShape, dataType, weightInitializer, device);
+            // TODO: Investigate initialization:
+            // All weights are contained in a single matrix that should have hiddenDims rows 
+            // and as many columns as needed to hold all parameters. Since this can be cumbersome to determine, 
+            // you can have the dimension inferred automatically. 
+            // To make sure that random initialization uses the correct fan-in, specify initOutputRank=-1:
+
+            var weighthape = new int[] { units, NDShape.InferredDimension };
+            var weights = new Parameter(weighthape, dataType, weightInitializer, device);
 
             return CNTKLib.OptimizedRNNStack(input, weights, (uint)units, (uint)layerCount,
                 bidirectional, recurrentOperator, name);
