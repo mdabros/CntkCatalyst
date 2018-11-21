@@ -84,6 +84,7 @@
     <Compile Include="LayerFunctions\Layers.Input.cs" />
     <Compile Include="LayerFunctions\Layers.Activations.cs" />
     <Compile Include="LayerFunctions\Layers.BatchNorm.cs" />
+    <Compile Include="LayerFunctions\Layers.OptimizedRNNStack.cs" />
     <Compile Include="Learners.cs" />
     <Compile Include="Losses.cs" />
     <Compile Include="MemoryMinibatchSource.cs" />
