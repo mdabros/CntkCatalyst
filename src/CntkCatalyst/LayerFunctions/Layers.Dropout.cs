@@ -7,9 +7,9 @@ namespace CntkCatalyst.LayerFunctions
     /// </summary>
     public static partial class Layers
     {
-        public static Function Dropout(this Function input, double dropoutRate, uint seed)
+        public static Function Dropout(this Function input, double dropoutRate, int seed)
         {
-            return CNTKLib.Dropout(input, dropoutRate, seed);
+            return CNTKLib.Dropout(input, dropoutRate, (uint)seed);
         }
     }
 }
