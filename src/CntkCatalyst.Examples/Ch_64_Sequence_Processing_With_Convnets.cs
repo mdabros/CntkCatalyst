@@ -84,7 +84,7 @@ namespace CntkCatalyst.Examples
                 isSparse: false);
 
             // Create the network.
-            var model = new Sequential(network, dataType, device);
+            var model = new Model(network, dataType, device);
 
             // Compile the network with the selected learner, loss and metric,
             // and custom target variable.

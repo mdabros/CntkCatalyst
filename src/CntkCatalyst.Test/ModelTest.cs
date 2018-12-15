@@ -8,10 +8,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace CntkCatalyst.Test.Models
 {
     [TestClass]
-    public class SequentialTest
+    public class ModelTest
     {
         [TestMethod]
-        public void Sequential_Use_Case()
+        public void Model_Use_Case()
         {
             var inputShape = new int[] { 28, 28, 1 };
             var numberOfClasses = 10;
@@ -33,7 +33,7 @@ namespace CntkCatalyst.Test.Models
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            var model = new Sequential(network, dataType, device);
+            var model = new Model(network, dataType, device);
 
             model.Compile(p => Learners.MomentumSGD(p),
                (p, t) => Losses.CategoricalCrossEntropy(p, t),

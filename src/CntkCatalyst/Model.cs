@@ -7,7 +7,7 @@ using CNTK;
 
 namespace CntkCatalyst
 {
-    public class Sequential
+    public class Model
     {
         Learner m_learner;
         Function m_loss;
@@ -25,7 +25,7 @@ namespace CntkCatalyst
         readonly DataType m_dataType;
         readonly DeviceDescriptor m_device;
 
-        public Sequential(Variable network,
+        public Model(Variable network,
             DataType dataType,
             DeviceDescriptor device)
         {

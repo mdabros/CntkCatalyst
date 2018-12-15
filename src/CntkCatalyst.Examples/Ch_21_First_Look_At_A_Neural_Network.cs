@@ -69,7 +69,7 @@ namespace CntkCatalyst.Examples
                 .Softmax();
 
             // Create the network.
-            var model = new Sequential(network, dataType, device);
+            var model = new Model(network, dataType, device);
 
             // Compile the network with the selected learner, loss and metric.
             model.Compile(p => Learners.RMSProp(p),
