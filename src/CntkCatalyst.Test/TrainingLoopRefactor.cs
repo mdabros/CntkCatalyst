@@ -127,7 +127,7 @@ namespace CntkCatalyst.Test.Models
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            var trainMinibatchSource = new MemoryMinibatchSource(observations, targets, seed: 232, randomize: true);
+            var minibatchSource = new MemoryMinibatchSource(observations, targets, seed: 232, randomize: true);
 
             // setup input and target variables.
             var inputVariable = network.Arguments[0];
@@ -146,8 +146,8 @@ namespace CntkCatalyst.Test.Models
             // setup streaminfo to variable map.
             var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
             {
-                { trainMinibatchSource.StreamInfo(trainMinibatchSource.FeaturesName), inputVariable },
-                { trainMinibatchSource.StreamInfo(trainMinibatchSource.TargetsName), targetVariable },
+                { minibatchSource.StreamInfo(minibatchSource.FeaturesName), inputVariable },
+                { minibatchSource.StreamInfo(minibatchSource.TargetsName), targetVariable },
             };
 
             // setup Fitter
@@ -156,37 +156,23 @@ namespace CntkCatalyst.Test.Models
             // variables for training loop.            
             var inputMap = new Dictionary<Variable, Value>();
 
-            var epochs = 100;
-            var batchSize = 32;
-
-            float m_lossSum = 0f;
-            float m_metricSum = 0f;
-            int m_totalSampleCount = 0;
+            var epochs = 10;
+            uint batchSize = 32;
 
             for (int epoch = 0; epoch < epochs;)
             {
-                var minibatch = trainMinibatchSource.GetNextMinibatch((uint)batchSize, device);
+                var minibatch = minibatchSource.GetNextMinibatch(batchSize, device);
                 var isSweepEnd = fitter.Step(minibatch);
-
-                var lossValue = (float)fitter.PreviousMinibatchLossAverage;
-                var metricValue = (float)fitter.PreviousMinibatchEvaluationAverage;
-
-                // Accumulate loss/metric.
-                m_lossSum += lossValue * batchSize;
-                m_metricSum += metricValue * batchSize;
-                m_totalSampleCount += batchSize;
 
                 if (isSweepEnd)
                 {
-                    var currentLoss = m_lossSum / m_totalSampleCount;
-                    var currentMetric = m_metricSum / m_totalSampleCount;
+                    var currentLoss = fitter.CurrentLoss;
+                    var currentMetric = fitter.CurrentMetric;
+                    fitter.ResetLossAccumulation();
 
-                    var traceOutput = $"Epoch ended: Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
+                    var traceOutput = $"Epoch: {epoch + 1:000} Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
 
                     ++epoch;
-                    m_lossSum = 0;
-                    m_metricSum = 0;
-                    m_totalSampleCount = 0;
 
                     Trace.WriteLine(traceOutput);
                 }
@@ -245,6 +231,10 @@ namespace CntkCatalyst.Test.Models
             IDictionary<StreamInformation, Variable> m_streamInfoToVariable;
             IDictionary<Variable, Value> m_input;
 
+            float m_lossSum = 0f;
+            float m_metricSum = 0f;
+            int m_totalSampleCount = 0;
+
             public Fitter(Trainer trainer, IDictionary<StreamInformation, Variable> streamInfoToVariable,
                 DeviceDescriptor device)
             {
@@ -258,35 +248,68 @@ namespace CntkCatalyst.Test.Models
             public Trainer Trainer { get; }
             public DeviceDescriptor Device { get; }
 
-            public double PreviousMinibatchLossAverage => Trainer.PreviousMinibatchLossAverage();
-            public double PreviousMinibatchEvaluationAverage => Trainer.PreviousMinibatchEvaluationAverage();
+            public double CurrentLoss => m_lossSum / m_totalSampleCount;
+            public double CurrentMetric => m_metricSum / m_totalSampleCount;
 
             public bool Step(IDictionary<StreamInformation, MinibatchData> minibatch)
             {
                 var isSweepEnd = minibatch.Values.Any(a => a.sweepEnd);
+                var batchSize = AssignDataFromMinibatch(minibatch);
 
+                Trainer.TrainMinibatch(m_input, false, Device);
+
+                AccumulateLossAndMetric(batchSize);
+                
+                m_input.Clear();
+                DisposeMiniBatchData(minibatch);
+
+                return isSweepEnd;
+            }
+
+            public void ResetLossAccumulation()
+            {
+                m_lossSum = 0;
+                m_metricSum = 0;
+                m_totalSampleCount = 0;
+            }
+
+            int AssignDataFromMinibatch(IDictionary<StreamInformation, MinibatchData> minibatch)
+            {
+                var batchSize = 0;
                 foreach (var kvp in m_streamInfoToVariable)
                 {
                     var streamInfo = kvp.Key;
                     var variable = kvp.Value;
 
+                    var minibatchData = minibatch[streamInfo];
+                    batchSize = (int)minibatchData.numberOfSamples;
+
                     var data = minibatch[streamInfo].data;
                     m_input.Add(variable, data);
                 }
 
-                Trainer.TrainMinibatch(m_input, false, Device);
+                return batchSize;
+            }
 
-                // Ensure cleanup.
-                m_input.Clear();
+            void AccumulateLossAndMetric(int batchSize)
+            {
+                var lossValue = (float)Trainer.PreviousMinibatchLossAverage();
+                var metricValue = (float)Trainer.PreviousMinibatchEvaluationAverage();
 
+                // Accumulate loss/metric.
+                m_lossSum += lossValue * batchSize;
+                m_metricSum += metricValue * batchSize;
+                m_totalSampleCount += batchSize;
+            }
+
+            static void DisposeMiniBatchData(IDictionary<StreamInformation, MinibatchData> minibatch)
+            {
                 // Dispose data.
                 foreach (var data in minibatch.Values)
                 {
                     data.data.Dispose();
                     data.Dispose();
                 }
-
-                return isSweepEnd;
             }
         }
     }
