@@ -63,14 +63,14 @@ namespace CntkCatalyst
         public string FeaturesName => m_featuresName;
         public string TargetsName => m_targetsName;
 
-        public UnorderedMapStreamInformationMinibatchData GetNextMinibatch(uint minibatchSizeInSamples, DeviceDescriptor device)
+        public IDictionary<StreamInformation, MinibatchData> GetNextMinibatch(uint minibatchSizeInSamples, DeviceDescriptor device)
         {
             var minibatchData = GetNextMinibatch((int)minibatchSizeInSamples);
 
             var batchObservations = Value.CreateBatch<float>(m_observations.SampleShape, minibatchData.observations, device, true);
             var batchTarget = Value.CreateBatch<float>(m_targets.SampleShape, minibatchData.targets, device, true);
 
-            var minibatch = new UnorderedMapStreamInformationMinibatchData
+            var minibatch = new Dictionary<StreamInformation, MinibatchData>
             {
                 { StreamInfo(m_featuresName), new MinibatchData(batchObservations,
                     minibatchSizeInSamples, minibatchData.isSweepEnd) },
