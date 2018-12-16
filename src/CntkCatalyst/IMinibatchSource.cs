@@ -5,7 +5,7 @@ namespace CntkCatalyst
 {
     public interface IMinibatchSource
     {
-        IDictionary<StreamInformation, MinibatchData> GetNextMinibatch(uint minibatchSizeInSamples, 
+        IDictionary<StreamInformation, MinibatchData> GetNextMinibatch(int minibatchSizeInSamples, 
             DeviceDescriptor device);
 
         StreamInformation StreamInfo(string streamName);

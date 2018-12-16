@@ -61,7 +61,7 @@ namespace CntkCatalyst.Test.Models
 
             for (int epoch = 0; epoch < epochs;)
             {
-                var minibatchData = trainMinibatchSource.GetNextMinibatch((uint)batchSize, device);
+                var minibatchData = trainMinibatchSource.GetNextMinibatch(batchSize, device);
                 var isSweepEnd = minibatchData.Values.Any(a => a.sweepEnd);
 
                 var obserationsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.FeaturesName);
@@ -157,7 +157,7 @@ namespace CntkCatalyst.Test.Models
             var inputMap = new Dictionary<Variable, Value>();
 
             var epochs = 10;
-            uint batchSize = 32;
+            int batchSize = 32;
 
             for (int epoch = 0; epoch < epochs;)
             {
