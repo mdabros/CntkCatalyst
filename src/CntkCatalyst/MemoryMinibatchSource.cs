@@ -63,7 +63,8 @@ namespace CntkCatalyst
         public string FeaturesName => m_featuresName;
         public string TargetsName => m_targetsName;
 
-        public IDictionary<StreamInformation, MinibatchData> GetNextMinibatch(int minibatchSizeInSamples, DeviceDescriptor device)
+        public (IDictionary<StreamInformation, MinibatchData> minibatch, bool isSweepEnd) GetNextMinibatch(
+            int minibatchSizeInSamples, DeviceDescriptor device)
         {
             var minibatchData = GetNextMinibatch(minibatchSizeInSamples);
 
@@ -79,7 +80,9 @@ namespace CntkCatalyst
                     (uint)minibatchSizeInSamples, minibatchData.isSweepEnd) },
             };
 
-            return minibatch;
+            var isSweepEnd = minibatchData.isSweepEnd;
+
+            return (minibatch, isSweepEnd);
         }
 
         public StreamInformation StreamInfo(string streamName)

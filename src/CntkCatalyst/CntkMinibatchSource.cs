@@ -21,10 +21,13 @@ namespace CntkCatalyst
         public string TargetsName { get; }
 
 
-        public IDictionary<StreamInformation, MinibatchData> GetNextMinibatch(int minibatchSizeInSamples, 
-            DeviceDescriptor device)
+        public (IDictionary<StreamInformation, MinibatchData> minibatch, bool isSweepEnd) GetNextMinibatch(
+            int minibatchSizeInSamples, DeviceDescriptor device)
         {
-            return m_minibatchSource.GetNextMinibatch((uint)minibatchSizeInSamples, device);            
+            var minibatch = m_minibatchSource.GetNextMinibatch((uint)minibatchSizeInSamples, device);
+            var isSweepEnd = minibatch.Values.Any(a => a.sweepEnd);
+
+            return (minibatch, isSweepEnd);
         }
 
         //public (IDictionary<Variable, MinibatchData> minibatch, bool isSweepEnd) NextMinibatch(uint minibatchSizeInSamples, DeviceDescriptor device)

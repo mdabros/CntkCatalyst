@@ -81,14 +81,13 @@ namespace CntkCatalyst
 
             for (int epoch = 0; epoch < epochs; )
             {
-                var minibatchData = trainMinibatchSource.GetNextMinibatch(batchSize, m_device);
-                var isSweepEnd = minibatchData.Values.Any(a => a.sweepEnd);
+                var (minibatch, isSweepEnd) = trainMinibatchSource.GetNextMinibatch(batchSize, m_device);
 
                 var obserationsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.FeaturesName);
                 var targetsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.TargetsName);
 
-                using (var observationsData = minibatchData[obserationsStreamInfo].data)
-                using (var targetsData = minibatchData[targetsStreamInfo].data)
+                using (var observationsData = minibatch[obserationsStreamInfo].data)
+                using (var targetsData = minibatch[targetsStreamInfo].data)
                 {
                     inputMap.Add(m_inputVariable, observationsData);
                     inputMap.Add(m_targetVariable, targetsData);
@@ -157,14 +156,15 @@ namespace CntkCatalyst
 
                 while (!isSweepEnd)
                 {
-                    var minibatchData = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
-                    isSweepEnd = minibatchData.Values.Any(a => a.sweepEnd);
+                    var nextMinibatch = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
+                    var minibatch = nextMinibatch.minibatch;
+                    isSweepEnd = nextMinibatch.isSweepEnd;
 
                     var obserationsStreamInfo = minibatchSource.StreamInfo(minibatchSource.FeaturesName);
                     var targetsStreamInfo = minibatchSource.StreamInfo(minibatchSource.TargetsName);
 
-                    using (var observations = minibatchData[obserationsStreamInfo])
-                    using (var targets = minibatchData[targetsStreamInfo])
+                    using (var observations = minibatch[obserationsStreamInfo])
+                    using (var targets = minibatch[targetsStreamInfo])
                     {
                         inputMap.Add(m_inputVariable, observations);
                         inputMap.Add(m_targetVariable, targets);
@@ -199,13 +199,14 @@ namespace CntkCatalyst
             while (!isSweepEnd)
             {
                 const int evaluationBatchSize = 1;
-                var minibatchData = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
-                isSweepEnd = minibatchData.Values.Any(a => a.sweepEnd);
-
+                var nextMinibatch = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
+                var minibatch = nextMinibatch.minibatch;
+                isSweepEnd = nextMinibatch.isSweepEnd;
+                
                 var obserationsStreamInfo = minibatchSource.StreamInfo(minibatchSource.FeaturesName);
                 var targetsStreamInfo = minibatchSource.StreamInfo(minibatchSource.TargetsName);
 
-                using (var observations = minibatchData[obserationsStreamInfo])
+                using (var observations = minibatch[obserationsStreamInfo])
                 {
                     inputMap.Add(m_inputVariable, observations.data);
 

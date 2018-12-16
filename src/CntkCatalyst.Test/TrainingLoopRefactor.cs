@@ -61,14 +61,13 @@ namespace CntkCatalyst.Test.Models
 
             for (int epoch = 0; epoch < epochs;)
             {
-                var minibatchData = trainMinibatchSource.GetNextMinibatch(batchSize, device);
-                var isSweepEnd = minibatchData.Values.Any(a => a.sweepEnd);
-
+                var (minibatch, isSweepEnd) = trainMinibatchSource.GetNextMinibatch(batchSize, device);
+                
                 var obserationsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.FeaturesName);
                 var targetsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.TargetsName);
 
-                using (var observationsData = minibatchData[obserationsStreamInfo].data)
-                using (var targetsData = minibatchData[targetsStreamInfo].data)
+                using (var observationsData = minibatch[obserationsStreamInfo].data)
+                using (var targetsData = minibatch[targetsStreamInfo].data)
                 {
                     inputMap.Add(inputVariable, observationsData);
                     inputMap.Add(targetVariable, targetsData);
@@ -161,8 +160,8 @@ namespace CntkCatalyst.Test.Models
 
             for (int epoch = 0; epoch < epochs;)
             {
-                var minibatch = minibatchSource.GetNextMinibatch(batchSize, device);
-                var isSweepEnd = fitter.Step(minibatch);
+                var (minibatch, isSweepEnd) = minibatchSource.GetNextMinibatch(batchSize, device);
+                fitter.Step(minibatch);
 
                 if (isSweepEnd)
                 {
@@ -251,9 +250,8 @@ namespace CntkCatalyst.Test.Models
             public double CurrentLoss => m_lossSum / m_totalSampleCount;
             public double CurrentMetric => m_metricSum / m_totalSampleCount;
 
-            public bool Step(IDictionary<StreamInformation, MinibatchData> minibatch)
+            public void Step(IDictionary<StreamInformation, MinibatchData> minibatch)
             {
-                var isSweepEnd = minibatch.Values.Any(a => a.sweepEnd);
                 var batchSize = AssignDataFromMinibatch(minibatch);
 
                 Trainer.TrainMinibatch(m_input, false, Device);
@@ -262,8 +260,6 @@ namespace CntkCatalyst.Test.Models
                 
                 m_input.Clear();
                 DisposeMiniBatchData(minibatch);
-
-                return isSweepEnd;
             }
 
             public void ResetLossAccumulation()
