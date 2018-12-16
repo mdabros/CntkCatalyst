@@ -8,7 +8,6 @@ namespace CntkCatalyst
     public class CntkMinibatchSource : IMinibatchSource
     {
         readonly MinibatchSource m_minibatchSource;
-        readonly string[] m_streamInfoNames;
 
         public CntkMinibatchSource(MinibatchSource minibatchSource, string featuresName, string labelsName)
         {
