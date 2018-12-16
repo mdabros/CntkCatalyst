@@ -161,7 +161,7 @@ namespace CntkCatalyst.Test.Models
             for (int epoch = 0; epoch < epochs;)
             {
                 var (minibatch, isSweepEnd) = minibatchSource.GetNextMinibatch(batchSize, device);
-                fitter.Step(minibatch);
+                fitter.FitNextStep(minibatch);
 
                 if (isSweepEnd)
                 {
@@ -250,7 +250,7 @@ namespace CntkCatalyst.Test.Models
             public double CurrentLoss => m_lossSum / m_totalSampleCount;
             public double CurrentMetric => m_metricSum / m_totalSampleCount;
 
-            public void Step(IDictionary<StreamInformation, MinibatchData> minibatch)
+            public void FitNextStep(IDictionary<StreamInformation, MinibatchData> minibatch)
             {
                 var batchSize = AssignDataFromMinibatch(minibatch);
 
