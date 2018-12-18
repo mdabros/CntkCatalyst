@@ -44,10 +44,5 @@ namespace CntkCatalyst
 
             return minibatch;
         }
-
-        public StreamInformation StreamInfo(string streamName)
-        {
-            return m_minibatchSource.StreamInfo(streamName);
-        }
     }
 }

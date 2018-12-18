@@ -75,11 +75,6 @@ namespace CntkCatalyst
             return (minibatch, isSweepEnd);
         }
 
-        public StreamInformation StreamInfo(string streamName)
-        {
-            return m_streamInfos[streamName];
-        }
-
         Dictionary<Variable, Value> NextBatch(DeviceDescriptor device)
         {
             var minibatch = new Dictionary<Variable, Value>();

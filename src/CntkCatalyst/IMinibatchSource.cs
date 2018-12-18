@@ -7,7 +7,5 @@ namespace CntkCatalyst
     {
         (IDictionary<Variable, Value> minibatch, bool isSweepEnd) GetNextMinibatch(
             int minibatchSizeInSamples, DeviceDescriptor device);
-
-        StreamInformation StreamInfo(string streamName);
     }
 }
