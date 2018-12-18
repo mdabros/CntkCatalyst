@@ -34,8 +34,6 @@ namespace CntkCatalyst.Test.Models
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            var model = new Model(network, dataType, device);
-
             // setup input and target variables.
             var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(network.Output.Shape, dataType);
@@ -44,13 +42,11 @@ namespace CntkCatalyst.Test.Models
             var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
             var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
 
-            // setup learner.
-            var learner = Learners.MomentumSGD(network.Parameters());
-
             // setup trainer.
+            var learner = Learners.MomentumSGD(network.Parameters());
             var trainer = CNTKLib.CreateTrainer(network, lossFunc, metricFunc, new LearnerVector { learner });
 
-            model.Compile(trainer);
+            var model = new Model(trainer, network, dataType, device);
 
             // setup name to data.
             var nameToData = new Dictionary<string, MemoryMinibatchData>

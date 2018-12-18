@@ -4,13 +4,13 @@ using CNTK;
 
 namespace CntkCatalyst
 {
-    public class BatchEvalutator : IDisposable
+    public class BatchEvaluator : IDisposable
     {
         double m_metricSum = 0f;
         int m_totalSampleCount = 0;
         bool disposed = false;
 
-        public BatchEvalutator(Evaluator evaluator, DeviceDescriptor device)
+        public BatchEvaluator(Evaluator evaluator, DeviceDescriptor device)
         {
             Evalautor = evaluator ?? throw new ArgumentNullException(nameof(evaluator));
             Device = device ?? throw new ArgumentNullException(nameof(device));

@@ -53,22 +53,20 @@ namespace CntkCatalyst.Examples
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            // Create the network.
-            var model = new Model(network, dataType, device);
-
             // Get input and target variables from network.
             var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(outputShape, dataType);
 
-            // setup loss and learner.
+            // setup loss and metric.
             var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
             var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+            
+            // setup trainer.
             var learner = Learners.RMSProp(network.Parameters());
-
             var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
 
-            // Compile the network with the selected learner, loss and metric.
-            model.Compile(trainer);
+            // Create the network.
+            var model = new Model(trainer, network, dataType, device);
 
             // Setup minibatch sources.
             // Network will be trained using the training set,

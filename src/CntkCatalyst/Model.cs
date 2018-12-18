@@ -22,26 +22,21 @@ namespace CntkCatalyst
         readonly DataType m_dataType;
         readonly DeviceDescriptor m_device;
 
-        public Model(Variable network,
+        public Model(Trainer trainer,
+            Variable network,
             DataType dataType,
             DeviceDescriptor device)
         {
+            m_trainer = trainer ?? throw new ArgumentNullException(nameof(trainer));
             Network = network ?? throw new ArgumentNullException(nameof(network));
             m_device = device ?? throw new ArgumentNullException(nameof(device));
             m_dataType = dataType;
-        }
 
-        public Function Network;
-
-        // TODO: Move compile parameters to constructor
-        public void Compile(Trainer trainer)
-        {
-            m_trainer = trainer;
-
-            // Set loss and metric.
             m_loss = trainer.LossFunction();
             m_metric = trainer.EvaluationFunction();
         }
+
+        public Function Network;
 
         public Dictionary<string, List<double>> Fit(IMinibatchSource trainMinibatchSource = null, int batchSize = 32, int epochs = 1,
             IMinibatchSource validationMinibatchSource = null)
@@ -97,8 +92,8 @@ namespace CntkCatalyst
         public (double loss, double metric) Evaluate(IMinibatchSource minibatchSource, int batchSize = 32)
         {
             // create loss and metric evaluators.
-            using (var lossEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_loss), m_device))
-            using (var metricEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_metric), m_device))
+            using (var lossEvaluator = new BatchEvaluator(CNTKLib.CreateEvaluator(m_loss), m_device))
+            using (var metricEvaluator = new BatchEvaluator(CNTKLib.CreateEvaluator(m_metric), m_device))
             {
                 bool isSweepEnd = false;
 
@@ -126,16 +121,14 @@ namespace CntkCatalyst
         public IList<IList<float>> Predict(IMinibatchSource minibatchSource)
         {
             var predictions = new List<IList<float>>();
-
-            //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
             var predictor = new Predictor(Network, m_device);
 
             bool isSweepEnd = false;
 
             while (!isSweepEnd)
             {
-                const int evaluationBatchSize = 1;
-                var nextMinibatch = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
+                const int predictionBatchSize = 1;
+                var nextMinibatch = minibatchSource.GetNextMinibatch(predictionBatchSize, m_device);
                 var minibatch = nextMinibatch.minibatch;
                 isSweepEnd = nextMinibatch.isSweepEnd;
 

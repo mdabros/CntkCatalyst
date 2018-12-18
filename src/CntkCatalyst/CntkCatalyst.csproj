@@ -69,7 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Predictor.cs" />
-    <Compile Include="BatchEvalutator.cs" />
+    <Compile Include="BatchEvaluator.cs" />
     <Compile Include="CntkMinibatchSource.cs" />
     <Compile Include="CntkUtils.cs" />
     <Compile Include="Fitter.cs" />
