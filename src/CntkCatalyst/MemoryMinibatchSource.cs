@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using CNTK;
 
@@ -34,6 +35,13 @@ namespace CntkCatalyst
                 throw new ArgumentException("No items added to data dictionary");
             }
 
+            if(!nameToData.Keys.SequenceEqual(nameToVariable.Keys))
+            {
+                throw new ArgumentException($"{nameof(nameToData)} keys does not match keys from {nameof(nameToVariable)}:" + Environment.NewLine +
+                    $"{nameof(nameToData)}: {string.Join(", ", nameToData.Keys)}" + Environment.NewLine +
+                    $"{nameof(nameToVariable)}: {string.Join(", ", nameToVariable.Keys)}");
+            }
+
             var sampleCount = nameToData.First().Value.SampleCount;
             foreach (var item in nameToData)
             {
@@ -44,8 +52,6 @@ namespace CntkCatalyst
                 }
             }
             
-            // TODO: Add checks for nameToVariable and nameToData correspondance.
-
             m_currentSweepIndeces = Enumerable.Range(0, sampleCount).ToArray();
             m_random = new Random(seed);
             m_randomize = randomize;

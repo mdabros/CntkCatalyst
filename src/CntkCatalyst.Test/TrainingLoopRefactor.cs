@@ -42,10 +42,8 @@ namespace CntkCatalyst.Test.Models
             var loss = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
             var metric = Metrics.Accuracy(network.Output, targetVariable);
 
-            // setup learner.
-            var learner = Learners.MomentumSGD(network.Parameters());
-
             // setup trainer.
+            var learner = Learners.MomentumSGD(network.Parameters());
             var trainer = CNTKLib.CreateTrainer(network, loss, metric, new LearnerVector { learner });
 
             // data names
