@@ -17,6 +17,11 @@ namespace CntkCatalyst.LayerFunctions
             return CNTKLib.Sigmoid(input);
         }
 
+        public static Function Tanh(this Function input)
+        {
+            return CNTKLib.Tanh(input);
+        }
+
         public static Function Softmax(this Function input)
         {
             return CNTKLib.Softmax(input);
