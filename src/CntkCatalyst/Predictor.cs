@@ -6,11 +6,8 @@ namespace CntkCatalyst
 {
     public class Predictor
     {
-        IDictionary<StreamInformation, Variable> m_streamInfoToVariable;
-
         double m_metricSum = 0f;
         int m_totalSampleCount = 0;
-        bool disposed = false;
 
         IDictionary<Variable, Value> m_output;
 
