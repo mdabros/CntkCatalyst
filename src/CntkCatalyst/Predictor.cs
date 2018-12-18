@@ -6,9 +6,6 @@ namespace CntkCatalyst
 {
     public class Predictor
     {
-        double m_metricSum = 0f;
-        int m_totalSampleCount = 0;
-
         IDictionary<Variable, Value> m_output;
 
         public Predictor(Function network, DeviceDescriptor device)
@@ -21,8 +18,6 @@ namespace CntkCatalyst
 
         public Function Network { get; }
         public DeviceDescriptor Device { get; }
-
-        public double CurrentMetric => m_metricSum / m_totalSampleCount;
 
         /// <summary>
         /// Currently only supports single output from network (can be multi-target, but only assigned to one output variable).
@@ -40,16 +35,10 @@ namespace CntkCatalyst
 
             var batchPrediction = outputVal.GetDenseData<float>(outputVar);
 
-            // Ensure cleanup, call erase.
+            // Ensure cleanup.
             m_output.Clear();
 
             return batchPrediction;
-        }
-
-        public void ResetLossAccumulation()
-        {
-            m_metricSum = 0;
-            m_totalSampleCount = 0;
         }
     }
 }
