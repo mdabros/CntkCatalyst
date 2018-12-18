@@ -103,8 +103,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
                     if (!isSweepEnd) // only fit when !isSweepEnd, to have full batch sizes.
                     {
                         // Add noise data to minibatch
-                        var discriminatorNoiseBatchValue = Value.CreateBatch<float>(ganeratorInputShape,
-                            NoiseSamples(random, batchSize, ganeratorInputShape.Dimensions), device);
+                        var discriminatorNoiseBatchValue = GANUtilities.CreateNoiseSamplesValue(
+                            random, batchSize, ganeratorInputShape, device);
 
                         discriminatorMinibatch.Add(generatorInput, discriminatorNoiseBatchValue);
                         discriminatorFitter.FitNextStep(discriminatorMinibatch, batchSize);
@@ -113,8 +113,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
                     }
                 }
 
-                var generatorNoiseBatchValue = Value.CreateBatch<float>(ganeratorInputShape,
-                    NoiseSamples(random, batchSize, ganeratorInputShape.Dimensions), device);
+                var generatorNoiseBatchValue = GANUtilities.CreateNoiseSamplesValue(
+                    random, batchSize, ganeratorInputShape, device);
 
                 var generatorMinibatch = new Dictionary<Variable, Value>
                 {
@@ -173,18 +173,6 @@ namespace CntkCatalyst.Examples.GenerativeModels
                  .Sigmoid();
 
             return discriminatorNetwork;
-        }
-
-        float[] NoiseSamples(Random random, int sampleCount, IList<int> sampleShape, 
-            float min = -1.0f, float max = 1.0f)
-        {
-            var totalElementCount = sampleCount * sampleShape.Aggregate((d1, d2) => d1 * d2);
-
-            var samples = Enumerable.Range(0, totalElementCount)
-                .Select(v => (float)random.NextDouble() * (max - min) + min)
-                .ToArray();
-
-            return samples;
         }
 
         MinibatchSource CreateMinibatchSource(string mapFilePath, Dictionary<string, Variable> nameToVariable,
