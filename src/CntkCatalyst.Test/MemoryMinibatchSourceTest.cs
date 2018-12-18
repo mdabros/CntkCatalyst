@@ -26,7 +26,7 @@ namespace CntkCatalyst.Test
         };
 
         [TestMethod]
-        public void MemoryMinibatchSource()
+        public void MemoryMinibatchSource_GetNextMinibatch()
         {
             var observationsShape = new int[] { 5 };
             var observations = new MemoryMinibatchData(m_observationsData, observationsShape, 9);
