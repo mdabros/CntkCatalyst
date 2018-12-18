@@ -20,15 +20,6 @@ namespace CntkCatalyst.Test.Models
 
             (var observations, var targets) = CreateArtificialData(inputShape, outputShape, observationCount: 10000);
 
-            // setup name to data map.
-            var nameToData = new Dictionary<string, MemoryMinibatchData>
-            {
-                { "observations", observations },
-                { "targets", targets }
-            };
-
-            var trainSource = new MemoryMinibatchSource(nameToData, seed: 232, randomize: true);
-
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
 
@@ -59,14 +50,23 @@ namespace CntkCatalyst.Test.Models
             // setup trainer.
             var trainer = CNTKLib.CreateTrainer(network, lossFunc, metricFunc, new LearnerVector { learner });
 
-            // setup streaminfo to variable map.
-            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
+            model.Compile(trainer);
+
+            // setup name to data.
+            var nameToData = new Dictionary<string, MemoryMinibatchData>
             {
-                { trainSource.StreamInfo("observations"), inputVariable },
-                { trainSource.StreamInfo("targets"), targetVariable },
+                { "observations", observations },
+                { "targets", targets }
             };
 
-            model.Compile(trainer, streamInfoToVariable);
+            // setup name to variable
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { "observations", inputVariable },
+                { "targets", targetVariable },
+            };
+
+            var trainSource = new MemoryMinibatchSource(nameToVariable, nameToData, seed: 232, randomize: true);
 
             model.Fit(trainSource, batchSize: 32, epochs: 10);
             

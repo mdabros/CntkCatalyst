@@ -33,22 +33,6 @@ namespace CntkCatalyst.Examples
             var numberOfClasses = 10;
             var outputShape = new int[] { numberOfClasses };
 
-            // Setup minibatch sources.
-            // Network will be trained using the training set,
-            // and tested using the test set.
-            var featuresName = "features";
-            var targetsName = "labels";
-
-            // The order of the training data is randomize.
-            var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: true);
-            var trainingSource = new CntkMinibatchSource(train);
-
-            // Notice randomization is switched off for test data.
-            var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: false);
-            var testSource = new CntkMinibatchSource(test);
-
             // Define data type and device for the model.
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
@@ -76,13 +60,6 @@ namespace CntkCatalyst.Examples
             var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(outputShape, dataType);
 
-            // setup streaminfo to variable map.
-            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
-            {
-                { trainingSource.StreamInfo(featuresName), inputVariable },
-                { trainingSource.StreamInfo(targetsName), targetVariable },
-            };
-
             // setup loss and learner.
             var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
             var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
@@ -91,7 +68,30 @@ namespace CntkCatalyst.Examples
             var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
 
             // Compile the network with the selected learner, loss and metric.
-            model.Compile(trainer, streamInfoToVariable);
+            model.Compile(trainer);
+
+            // Setup minibatch sources.
+            // Network will be trained using the training set,
+            // and tested using the test set.
+            var featuresName = "features";
+            var targetsName = "labels";
+
+            // name to variable.
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { featuresName, inputVariable },
+                { targetsName, targetVariable },
+            };
+
+            // The order of the training data is randomize.
+            var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, randomize: true);
+            var trainingSource = new CntkMinibatchSource(train, nameToVariable);
+
+            // Notice randomization is switched off for test data.
+            var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, randomize: false);
+            var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
             model.Fit(trainingSource, epochs: 5, batchSize: 128);

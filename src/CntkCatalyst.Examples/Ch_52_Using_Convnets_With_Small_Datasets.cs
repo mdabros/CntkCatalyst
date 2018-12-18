@@ -32,24 +32,6 @@ namespace CntkCatalyst.Examples
             var numberOfClasses = 2;
             var outputShape = new int[] { numberOfClasses };
 
-            // Setup minibatch sources.
-            var featuresName = "features";
-            var targetsName = "targets";
-
-            var train = CreateMinibatchSource(mapFiles.trainFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, augmentation: true);
-            var trainingSource = new CntkMinibatchSource(train);
-
-            // Notice augmentation is switched off for validation data.
-            var valid = CreateMinibatchSource(mapFiles.validFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, augmentation: false); 
-            var validationSource = new CntkMinibatchSource(valid);
-
-            // Notice augmentation is switched off for test data.
-            var test = CreateMinibatchSource(mapFiles.testFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, augmentation: false); 
-            var testSource = new CntkMinibatchSource(test);
-
             // Define data type and device for the model.
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
@@ -89,13 +71,6 @@ namespace CntkCatalyst.Examples
             var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(outputShape, dataType);
 
-            // setup streaminfo to variable map.
-            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
-            {
-                { trainingSource.StreamInfo(featuresName), inputVariable },
-                { trainingSource.StreamInfo(targetsName), targetVariable },
-            };
-
             // setup loss and learner.
             var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
             var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
@@ -104,10 +79,34 @@ namespace CntkCatalyst.Examples
             var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
 
             // Compile the network with the selected learner, loss and metric.
-            model.Compile(trainer, streamInfoToVariable);
+            model.Compile(trainer);
 
             // Write model summary.
             Trace.WriteLine(model.Summary());
+
+            // Setup minibatch sources.
+            var featuresName = "features";
+            var targetsName = "targets";
+
+            // setup name to variable map.
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { featuresName, inputVariable },
+                { targetsName, targetVariable },
+            };
+            var train = CreateMinibatchSource(mapFiles.trainFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, augmentation: true);
+            var trainingSource = new CntkMinibatchSource(train, nameToVariable);
+
+            // Notice augmentation is switched off for validation data.
+            var valid = CreateMinibatchSource(mapFiles.validFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, augmentation: false);
+            var validationSource = new CntkMinibatchSource(valid, nameToVariable);
+
+            // Notice augmentation is switched off for test data.
+            var test = CreateMinibatchSource(mapFiles.testFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, augmentation: false);
+            var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
             model.Fit(trainMinibatchSource: trainingSource,

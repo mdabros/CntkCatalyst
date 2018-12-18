@@ -12,7 +12,6 @@ namespace CntkCatalyst
         Function m_loss;
         Function m_metric;
         Trainer m_trainer;
-        IDictionary<StreamInformation, Variable> m_streamToVariable;
 
         const string m_lossName = "Loss";
         const string m_metricName = "Metric";
@@ -35,10 +34,8 @@ namespace CntkCatalyst
         public Function Network;
 
         // TODO: Move compile parameters to constructor
-        public void Compile(Trainer trainer,
-            IDictionary<StreamInformation, Variable> streamToVariable)
+        public void Compile(Trainer trainer)
         {
-            m_streamToVariable = streamToVariable;
             m_trainer = trainer;
 
             // Set loss and metric.
@@ -50,9 +47,8 @@ namespace CntkCatalyst
             IMinibatchSource validationMinibatchSource = null)
 
         {
-            // setup fitter.
-            //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
-            var fitter = new Fitter(m_trainer, m_streamToVariable, m_device);
+            // Setup fitter.
+            var fitter = new Fitter(m_trainer, m_device);
 
             // store epoch history
             var lossValidationHistory = new Dictionary<string, List<double>>
@@ -67,7 +63,7 @@ namespace CntkCatalyst
             {
                 var (minibatch, isSweepEnd) = trainMinibatchSource.GetNextMinibatch(batchSize, m_device);
 
-                fitter.FitNextStep(minibatch);
+                fitter.FitNextStep(minibatch, batchSize);
 
                 if (isSweepEnd)
                 {
@@ -101,10 +97,8 @@ namespace CntkCatalyst
         public (double loss, double metric) Evaluate(IMinibatchSource minibatchSource, int batchSize = 32)
         {
             // create loss and metric evaluators.
-
-            //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
-            using (var lossEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_loss), m_streamToVariable, m_device))
-            using (var metricEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_metric), m_streamToVariable, m_device))
+            using (var lossEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_loss), m_device))
+            using (var metricEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_metric), m_device))
             {
                 bool isSweepEnd = false;
 
@@ -118,8 +112,8 @@ namespace CntkCatalyst
                     var minibatch = nextMinibatch.minibatch;
                     isSweepEnd = nextMinibatch.isSweepEnd;
 
-                    lossEvaluator.EvalauteNextStep(minibatch);
-                    metricEvaluator.EvalauteNextStep(minibatch);
+                    lossEvaluator.EvalauteNextStep(minibatch, batchSize);
+                    metricEvaluator.EvalauteNextStep(minibatch, batchSize);
                 }
 
                 var finalLoss = lossEvaluator.CurrentMetric;
@@ -134,7 +128,7 @@ namespace CntkCatalyst
             var predictions = new List<IList<float>>();
 
             //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
-            var predictor = new Predictor(Network, m_streamToVariable, m_device);
+            var predictor = new Predictor(Network, m_device);
 
             bool isSweepEnd = false;
 

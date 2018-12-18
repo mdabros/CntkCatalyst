@@ -6,17 +6,13 @@ namespace CntkCatalyst
 {
     public class BatchEvalutator : IDisposable
     {
-        IDictionary<StreamInformation, Variable> m_streamInfoToVariable;
-
         double m_metricSum = 0f;
         int m_totalSampleCount = 0;
         bool disposed = false;
 
-        public BatchEvalutator(Evaluator evaluator, IDictionary<StreamInformation, Variable> streamInfoToVariable,
-            DeviceDescriptor device)
+        public BatchEvalutator(Evaluator evaluator, DeviceDescriptor device)
         {
             Evalautor = evaluator ?? throw new ArgumentNullException(nameof(evaluator));
-            m_streamInfoToVariable = streamInfoToVariable ?? throw new ArgumentNullException(nameof(streamInfoToVariable));
             Device = device ?? throw new ArgumentNullException(nameof(device));
         }
 
@@ -25,11 +21,11 @@ namespace CntkCatalyst
 
         public double CurrentMetric => m_metricSum / m_totalSampleCount;
 
-        public void EvalauteNextStep(IDictionary<StreamInformation, MinibatchData> minibatch)
+        public void EvalauteNextStep(IDictionary<Variable, Value> minibatch, int batchSize)
         {
             using (var inputMap = new UnorderedMapVariableMinibatchData())
             {
-                var batchSize = AssignDataFromMinibatch(minibatch, inputMap);
+                AssignDataFromMinibatch(minibatch, inputMap, batchSize);
 
                 m_metricSum += Evalautor.TestMinibatch(inputMap, Device) * batchSize;
                 m_totalSampleCount += batchSize;
@@ -44,22 +40,17 @@ namespace CntkCatalyst
             m_totalSampleCount = 0;
         }
 
-        int AssignDataFromMinibatch(IDictionary<StreamInformation, MinibatchData> minibatch, UnorderedMapVariableMinibatchData inputMap)
+        void AssignDataFromMinibatch(IDictionary<Variable, Value> minibatch, 
+            UnorderedMapVariableMinibatchData inputMap,
+            int batchSize)
         {
-            var batchSize = 0;
-            foreach (var kvp in m_streamInfoToVariable)
+            foreach (var kvp in minibatch)
             {
-                var streamInfo = kvp.Key;
-                var variable = kvp.Value;
+                var variable = kvp.Key;
+                var value = kvp.Value;
 
-                var minibatchData = minibatch[streamInfo];
-                batchSize = (int)minibatchData.numberOfSamples;
-
-                var data = minibatch[streamInfo];
-                inputMap.Add(variable, data);
+                inputMap.Add(variable, new MinibatchData(value, (uint)batchSize));
             }
-
-            return batchSize;
         }
 
         // Public implementation of Dispose pattern callable by consumers.

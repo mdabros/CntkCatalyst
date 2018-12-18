@@ -16,47 +16,52 @@ namespace CntkCatalyst
         readonly float[] m_minibatch;
         bool m_randomize;
 
-        IDictionary<string, MemoryMinibatchData> m_data;
+        IDictionary<string, MemoryMinibatchData> m_nameToData;
+        IDictionary<string, Variable> m_nameToVarible;
 
         readonly Dictionary<string, StreamInformation> m_streamInfos;
 
-        public MemoryMinibatchSource(IDictionary<string, MemoryMinibatchData> data,
+        public MemoryMinibatchSource(IDictionary<string, Variable> nameToVariable,
+            IDictionary<string, MemoryMinibatchData> nameToData,
             int seed,
             bool randomize)
         {
-            m_data = data ?? throw new ArgumentNullException(nameof(data));
+            m_nameToData = nameToData ?? throw new ArgumentNullException(nameof(nameToData));
+            m_nameToVarible = nameToVariable ?? throw new ArgumentNullException(nameof(nameToVariable));
 
-            if(data.Count <= 0)
+            if (nameToData.Count <= 0)
             {
                 throw new ArgumentException("No items added to data dictionary");
             }
 
-            var sampleCount = data.First().Value.SampleCount;
-            foreach (var item in data)
+            var sampleCount = nameToData.First().Value.SampleCount;
+            foreach (var item in nameToData)
             {
                 if(sampleCount != item.Value.SampleCount)
                 {
                     throw new ArgumentException($"Sample count not consistent: " 
-                        + string.Join(",", data.Select(v => $"{v.Key}: samples: {v.Value.SampleCount}")));
+                        + string.Join(",", nameToData.Select(v => $"{v.Key}: samples: {v.Value.SampleCount}")));
                 }
             }
+            
+            // TODO: Add checks for nameToVariable and nameToData correspondance.
 
             m_currentSweepIndeces = Enumerable.Range(0, sampleCount).ToArray();
             m_random = new Random(seed);
             m_randomize = randomize;
             m_minibatch = Array.Empty<float>();
 
-            m_streamInfos = m_data.ToDictionary(v => v.Key, v => new StreamInformation { m_name = v.Key });
+            m_streamInfos = m_nameToData.ToDictionary(v => v.Key, v => new StreamInformation { m_name = v.Key });
         }
 
-        public (IDictionary<StreamInformation, MinibatchData> minibatch, bool isSweepEnd) GetNextMinibatch(
+        public (IDictionary<Variable, Value> minibatch, bool isSweepEnd) GetNextMinibatch(
             int minibatchSizeInSamples, DeviceDescriptor device)
         {
             CheckIfNewSweepAndShuffle();
 
             UpdateBatchIndeces(minibatchSizeInSamples, m_currentBatchStartIndex);
 
-            var minibatchItems = NextBatch(device);
+            var minibatch = NextBatch(device);
 
             m_currentBatchStartIndex += minibatchSizeInSamples;
 
@@ -67,9 +72,6 @@ namespace CntkCatalyst
                 m_currentBatchStartIndex = -1;
             }
 
-            var minibatch = minibatchItems.ToDictionary(v => v.Key, 
-                v => new MinibatchData(v.Value, (uint)minibatchSizeInSamples, isSweepEnd));
-
             return (minibatch, isSweepEnd);
         }
 
@@ -78,18 +80,19 @@ namespace CntkCatalyst
             return m_streamInfos[streamName];
         }
 
-        Dictionary<StreamInformation, Value> NextBatch(DeviceDescriptor device)
+        Dictionary<Variable, Value> NextBatch(DeviceDescriptor device)
         {
-            var minibatch = new Dictionary<StreamInformation, Value>();
+            var minibatch = new Dictionary<Variable, Value>();
 
-            foreach (var item in m_data)
+            foreach (var item in m_nameToData)
             {
                 var sampleShape = item.Value.SampleShape;
                 var samplesData = CopyMinibatchSamples(item.Value);
                 var name = item.Key;
 
                 var value = Value.CreateBatch<float>(sampleShape, samplesData, device, true);
-                minibatch.Add(StreamInfo(name), value);
+                var variable = m_nameToVarible[name];
+                minibatch.Add(variable, value);
             }
 
             return minibatch;

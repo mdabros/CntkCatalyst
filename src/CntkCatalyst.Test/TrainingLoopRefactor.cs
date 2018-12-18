@@ -34,19 +34,6 @@ namespace CntkCatalyst.Test.Models
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            // data names
-            var observationsName = "observations";
-            var targetsName = "targets";
-
-            // setup name to data map.
-            var nameToData = new Dictionary<string, MemoryMinibatchData>
-            {
-                { observationsName, observations },
-                { targetsName, targets }
-            };
-
-            var minibatchSource = new MemoryMinibatchSource(nameToData, seed: 232, randomize: true);
-
             // setup input and target variables.
             var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(network.Output.Shape, dataType);
@@ -61,15 +48,28 @@ namespace CntkCatalyst.Test.Models
             // setup trainer.
             var trainer = CNTKLib.CreateTrainer(network, loss, metric, new LearnerVector { learner });
 
-            // setup streaminfo to variable map.
-            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
+            // data names
+            var observationsName = "observations";
+            var targetsName = "targets";
+
+            // setup name to variable map.
+            var nameToVariable = new Dictionary<string, Variable>
             {
-                { minibatchSource.StreamInfo(observationsName), inputVariable },
-                { minibatchSource.StreamInfo(targetsName), targetVariable },
+                { observationsName, inputVariable },
+                { targetsName, targetVariable },
             };
 
+            // setup name to data map.
+            var nameToData = new Dictionary<string, MemoryMinibatchData>
+            {
+                { observationsName, observations },
+                { targetsName, targets }
+            };
+            
+            var minibatchSource = new MemoryMinibatchSource(nameToVariable, nameToData, seed: 232, randomize: true);
+
             // setup Fitter
-            var fitter = new Fitter(trainer, streamInfoToVariable, device);
+            var fitter = new Fitter(trainer, device);
 
             // variables for training loop.            
             var inputMap = new Dictionary<Variable, Value>();
@@ -80,7 +80,7 @@ namespace CntkCatalyst.Test.Models
             for (int epoch = 0; epoch < epochs;)
             {
                 var (minibatch, isSweepEnd) = minibatchSource.GetNextMinibatch(batchSize, device);
-                fitter.FitNextStep(minibatch);
+                fitter.FitNextStep(minibatch, batchSize);
 
                 if (isSweepEnd)
                 {
