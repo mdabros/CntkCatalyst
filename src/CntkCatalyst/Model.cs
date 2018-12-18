@@ -45,6 +45,7 @@ namespace CntkCatalyst
             // Setup fitter.
             var fitter = new Fitter(m_trainer, m_device);
 
+            // TODO: Refactor to callback style reporting for each metric, instead of returning a dictionary.
             // store epoch history
             var lossValidationHistory = new Dictionary<string, List<double>>
             {
