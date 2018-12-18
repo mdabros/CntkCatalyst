@@ -75,6 +75,9 @@ namespace CntkCatalyst.Examples
             // Create the network.
             var model = new Model(trainer, network, dataType, device);
 
+            // Write model summary.
+            Trace.WriteLine(model.Summary());
+
             // Setup minibatch sources.
             // Network will be trained using the training set,
             // and tested using the test set.

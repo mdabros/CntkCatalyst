@@ -79,6 +79,9 @@ namespace CntkCatalyst.Examples
             // Create the network.
             var model = new Model(trainer, network, dataType, device);
 
+            // Write model summary.
+            Trace.WriteLine(model.Summary());
+
             // Setup minibatch sources.
             // Network will be trained using the training set,
             // and tested using the test set.
@@ -106,9 +109,6 @@ namespace CntkCatalyst.Examples
 
             // Write the test set loss and metric to debug output.
             Trace.WriteLine($"Test set - Loss: {loss}, Metric: {metric}");
-
-            // Write model summary.
-            Trace.WriteLine(model.Summary());
         }
 
         MinibatchSource CreateMinibatchSource(string mapFilePath, Dictionary<string, Variable> nameToVariable,
