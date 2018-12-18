@@ -63,14 +63,15 @@ namespace CntkCatalyst
 
                 if (isSweepEnd)
                 {
+                    // Get current loss and metric, reset accumulators for next epoch.
                     var currentLoss = fitter.CurrentLoss;
-                    lossValidationHistory[m_lossName].Add(currentLoss);
-
                     var currentMetric = fitter.CurrentMetric;
+                    fitter.ResetLossAndMetricAccumulators();
+
+                    lossValidationHistory[m_lossName].Add(currentLoss);
                     lossValidationHistory[m_metricName].Add(currentMetric);
 
                     var traceOutput = $"Epoch: {epoch + 1:000} Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
-                    fitter.ResetLossAndMetricAccumulators();
 
                     ++epoch;
 
