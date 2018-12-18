@@ -77,7 +77,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             int epochs = 100;
             int batchSize = 1024;
-            int k = 5;
+            int k = 2;
             double learningRate = 0.00005;
 
             // setup generator loss: 1.0 - C.log(D_fake)
@@ -115,6 +115,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
                 var generatorNoiseBatchValue = Value.CreateBatch<float>(ganeratorInputShape,
                     NoiseSamples(random, batchSize, ganeratorInputShape.Dimensions), device);
+
                 var generatorMinibatch = new Dictionary<Variable, Value>
                 {
                     { generatorInput,  generatorNoiseBatchValue}
@@ -143,7 +144,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
         static Fitter CreateFitter(double learningRate, Function network, Function loss, DeviceDescriptor device)
         {
-            var learner = Learners.Adam(network.Parameters(), learningRate);
+            var learner = Learners.SGD(network.Parameters(), learningRate);
             var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
             var fitter = new Fitter(trainer, device);
 
