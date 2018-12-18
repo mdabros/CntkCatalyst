@@ -26,6 +26,11 @@ namespace CntkCatalyst.Examples.GenerativeModels
         [TestMethod]
         public void Run()
         {
+            // TODO: 
+            // - Add visualization.
+            // - Verify results.
+            // - Clean up code.
+
             // Prepare data
             var baseDataDirectoryPath = @"E:\DataSets\Mnist";
             var trainFilePath = Path.Combine(baseDataDirectoryPath, "Train-28x28_cntk_text.txt");
@@ -86,7 +91,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var generatorFitter = CreateFitter(generatorNetwork, generatorLossFunc, device);
             var discriminatorFitter = CreateFitter(discriminatorNetwork, discriminatorLossFunc, device);
 
-            int epochs = 100;
+            int epochs = 700;
             int batchSize = 1024;
             int discriminitorSteps = 1;
 
