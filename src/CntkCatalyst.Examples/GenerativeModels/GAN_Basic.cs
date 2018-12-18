@@ -81,11 +81,12 @@ namespace CntkCatalyst.Examples.GenerativeModels
             double learningRate = 0.00005;
 
             // setup generator loss: 1.0 - C.log(D_fake)
-            var generatorLossFunc = Constant.Scalar(1.0f, device).Minus(CNTKLib.Log(discriminatorNetworkFake));
-
+            var generatorLossFunc = CNTKLib.Minus(Constant.Scalar(1.0f, device), 
+                CNTKLib.Log(discriminatorNetworkFake));
+                        
             // setup discriminator loss: -(C.log(D_real) + C.log(1.0 - D_fake))
-            var discriminatorLossFunc = Constant.Scalar(0.0f, device).Minus(CNTKLib.Log(discriminatorNetwork))
-                .Plus(CNTKLib.Log(Constant.Scalar(1.0f, device).Minus(discriminatorNetworkFake)));
+            var discriminatorLossFunc = CNTKLib.Negate(CNTKLib.Plus(CNTKLib.Log(discriminatorNetwork), 
+                CNTKLib.Log(CNTKLib.Minus(Constant.Scalar(1.0f, device), discriminatorNetworkFake))));
 
             var generatorFitter = CreateFitter(learningRate, generatorNetwork, generatorLossFunc, device);
             var discriminatorFitter = CreateFitter(learningRate, discriminatorNetwork, discriminatorLossFunc, device);
