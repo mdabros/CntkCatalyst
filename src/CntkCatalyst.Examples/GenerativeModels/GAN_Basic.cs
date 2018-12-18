@@ -75,11 +75,6 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var train = CreateMinibatchSource(trainFilePath, nameToVariable, randomize: true);
             var trainingSource = new CntkMinibatchSource(train, nameToVariable);
 
-            int epochs = 100;
-            int batchSize = 1024;
-            int k = 1;
-            double learningRate = 0.00005;
-
             // setup generator loss: 1.0 - C.log(D_fake)
             var generatorLossFunc = CNTKLib.Minus(Constant.Scalar(1.0f, device), 
                 CNTKLib.Log(discriminatorNetworkFake));
@@ -88,14 +83,18 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var discriminatorLossFunc = CNTKLib.Negate(CNTKLib.Plus(CNTKLib.Log(discriminatorNetwork), 
                 CNTKLib.Log(CNTKLib.Minus(Constant.Scalar(1.0f, device), discriminatorNetworkFake))));
 
-            var generatorFitter = CreateFitter(learningRate, generatorNetwork, generatorLossFunc, device);
-            var discriminatorFitter = CreateFitter(learningRate, discriminatorNetwork, discriminatorLossFunc, device);
+            var generatorFitter = CreateFitter(generatorNetwork, generatorLossFunc, device);
+            var discriminatorFitter = CreateFitter(discriminatorNetwork, discriminatorLossFunc, device);
+
+            int epochs = 100;
+            int batchSize = 1024;
+            int discriminitorSteps = 1;
 
             var isSweepEnd = false;
             for (int epoch = 0; epoch < epochs;)
             {
                 // Fit discriminator for k steps.
-                for (int i = 0; i < k; i++)
+                for (int k = 0; k < discriminitorSteps; k++)
                 {
                     var minibatchItems = trainingSource.GetNextMinibatch(batchSize, device);
                     var discriminatorMinibatch = minibatchItems.minibatch;
@@ -143,9 +142,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
             }
         }
 
-        static Fitter CreateFitter(double learningRate, Function network, Function loss, DeviceDescriptor device)
+        static Fitter CreateFitter(Function network, Function loss, DeviceDescriptor device)
         {
-            var learner = Learners.Adam(network.Parameters(), learningRate);
+            var learner = Learners.Adam(network.Parameters(), learningRate: 0.00005);
             var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
             var fitter = new Fitter(trainer, device);
 
