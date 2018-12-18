@@ -72,7 +72,7 @@ namespace CntkCatalyst.Test.Models
             // variables for training loop.            
             var inputMap = new Dictionary<Variable, Value>();
 
-            var epochs = 100;
+            var epochs = 10;
             int batchSize = 32;
 
             for (int epoch = 0; epoch < epochs;)
