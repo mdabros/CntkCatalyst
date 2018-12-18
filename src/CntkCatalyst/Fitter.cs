@@ -28,7 +28,7 @@ namespace CntkCatalyst
             AccumulateLossAndMetric(batchSize);
         }
 
-        public void ResetLossAccumulation()
+        public void ResetLossAndMetricAccumulators()
         {
             m_lossSum = 0;
             m_metricSum = 0;

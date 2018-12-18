@@ -38,7 +38,7 @@ namespace CntkCatalyst
             }
         }
 
-        public void ResetLossAccumulation()
+        public void ResetMetricAccumulators()
         {
             m_metricSum = 0;
             m_totalSampleCount = 0;

@@ -84,7 +84,7 @@ namespace CntkCatalyst.Test.Models
                 {
                     var currentLoss = fitter.CurrentLoss;
                     var currentMetric = fitter.CurrentMetric;
-                    fitter.ResetLossAccumulation();
+                    fitter.ResetLossAndMetricAccumulators();
 
                     var traceOutput = $"Epoch: {epoch + 1:000} Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
 

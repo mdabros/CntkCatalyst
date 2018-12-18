@@ -69,7 +69,7 @@ namespace CntkCatalyst
                     lossValidationHistory[m_metricName].Add(currentMetric);
 
                     var traceOutput = $"Epoch: {epoch + 1:000} Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
-                    fitter.ResetLossAccumulation();
+                    fitter.ResetLossAndMetricAccumulators();
 
                     ++epoch;
 
