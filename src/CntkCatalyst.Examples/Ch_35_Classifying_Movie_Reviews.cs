@@ -69,7 +69,7 @@ namespace CntkCatalyst.Examples
             var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
             
             // setup trainer.
-            var learner = Learners.RMSProp(network.Parameters());
+            var learner = Learners.Adam(network.Parameters());
             var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
 
             // Create the network.
