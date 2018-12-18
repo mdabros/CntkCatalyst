@@ -32,24 +32,6 @@ namespace CntkCatalyst.Examples
             var numberOfClasses = 2;
             var outputShape = new int[] { numberOfClasses };
 
-            // Setup minibatch sources.
-            var featuresName = "features";
-            var targetsName = "targets";
-
-            var train = CreateMinibatchSource(mapFiles.trainFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, augmentation: true);
-            var trainingSource = new CntkMinibatchSource(train, featuresName, targetsName);
-
-            // Notice augmentation is switched off for validation data.
-            var valid = CreateMinibatchSource(mapFiles.validFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, augmentation: false); 
-            var validationSource = new CntkMinibatchSource(valid, featuresName, targetsName);
-
-            // Notice augmentation is switched off for test data.
-            var test = CreateMinibatchSource(mapFiles.testFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, augmentation: false); 
-            var testSource = new CntkMinibatchSource(test, featuresName, targetsName);
-
             // Define data type and device for the model.
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
@@ -82,16 +64,47 @@ namespace CntkCatalyst.Examples
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            // Create the network.
-            var model = new Sequential(network, dataType, device);
+            // Get input and target variables from network.
+            var inputVariable = network.Arguments[0];
+            var targetVariable = Variable.InputVariable(outputShape, dataType);
 
-            // Compile the network with the selected learner, loss and metric.
-            model.Compile(p => Learners.Adam(p, learningRate: 0.0001),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t));
+            // setup loss and learner.
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+
+            // setup trainer.
+            var learner = Learners.RMSProp(network.Parameters());
+            var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
+            // Create the network.
+            var model = new Model(trainer, network, dataType, device);
 
             // Write model summary.
             Trace.WriteLine(model.Summary());
+
+            // Setup minibatch sources.
+            var featuresName = "features";
+            var targetsName = "targets";
+
+            // setup name to variable map.
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { featuresName, inputVariable },
+                { targetsName, targetVariable },
+            };
+            var train = CreateMinibatchSource(mapFiles.trainFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, augmentation: true);
+            var trainingSource = new CntkMinibatchSource(train, nameToVariable);
+
+            // Notice augmentation is switched off for validation data.
+            var valid = CreateMinibatchSource(mapFiles.validFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, augmentation: false);
+            var validationSource = new CntkMinibatchSource(valid, nameToVariable);
+
+            // Notice augmentation is switched off for test data.
+            var test = CreateMinibatchSource(mapFiles.testFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, augmentation: false);
+            var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
             model.Fit(trainMinibatchSource: trainingSource,

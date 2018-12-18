@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -32,22 +33,6 @@ namespace CntkCatalyst.Examples
             var numberOfClasses = 10;
             var outputShape = new int[] { numberOfClasses };
 
-            // Setup minibatch sources.
-            // Network will be trained using the training set,
-            // and tested using the test set.
-            var featuresName = "features";
-            var targetsName = "labels";
-
-            // The order of the training data is randomize.
-            var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: true);
-            var trainingSource = new CntkMinibatchSource(train, featuresName, targetsName);
-
-            // Notice randomization is switched off for test data.
-            var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: false);
-            var testSource = new CntkMinibatchSource(test, featuresName, targetsName);
-
             // Define data type and device for the model.
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
@@ -68,13 +53,42 @@ namespace CntkCatalyst.Examples
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            // Create the network.
-            var model = new Sequential(network, dataType, device);
+            // Get input and target variables from network.
+            var inputVariable = network.Arguments[0];
+            var targetVariable = Variable.InputVariable(outputShape, dataType);
 
-            // Compile the network with the selected learner, loss and metric.
-            model.Compile(p => Learners.RMSProp(p),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t));
+            // setup loss and metric.
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+            
+            // setup trainer.
+            var learner = Learners.RMSProp(network.Parameters());
+            var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
+            // Create the network.
+            var model = new Model(trainer, network, dataType, device);
+
+            // Write model summary.
+            Trace.WriteLine(model.Summary());
+
+            // Setup minibatch sources.
+            // Network will be trained using the training set,
+            // and tested using the test set.
+
+            // name to variable.
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { "features", inputVariable },
+                { "labels", targetVariable },
+            };
+
+            // The order of the training data is randomize.
+            var train = CreateMinibatchSource(trainFilePath, nameToVariable, randomize: true);
+            var trainingSource = new CntkMinibatchSource(train, nameToVariable);
+
+            // Notice randomization is switched off for test data.
+            var test = CreateMinibatchSource(testFilePath, nameToVariable, randomize: false);
+            var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
             model.Fit(trainingSource, epochs: 5, batchSize: 128);
@@ -86,18 +100,19 @@ namespace CntkCatalyst.Examples
             Trace.WriteLine($"Test set - Loss: {loss}, Metric: {metric}");
         }
 
-        MinibatchSource CreateMinibatchSource(string mapFilePath, string featuresName, string targetsName,
-            int numberOfClasses, int[] inputShape, bool randomize)
+        MinibatchSource CreateMinibatchSource(string mapFilePath, Dictionary<string, Variable> nameToVariable,
+            bool randomize)
         {
-            var inputSize = inputShape.Aggregate((d1, d2) => d1 * d2);
-            var streamConfigurations = new StreamConfiguration[]
+            var streamConfigurations = new List<StreamConfiguration>();
+            foreach (var kvp in nameToVariable)
             {
-                new StreamConfiguration(featuresName, inputSize),
-                new StreamConfiguration(targetsName, numberOfClasses)
-            };
-
+                var size = kvp.Value.Shape.Dimensions.Aggregate((d1, d2) => d1 * d2);
+                var name = kvp.Key;
+                streamConfigurations.Add(new StreamConfiguration(name, size));
+            }
+                        
             var minibatchSource = MinibatchSource.TextFormatMinibatchSource(
-                mapFilePath, 
+                mapFilePath,
                 streamConfigurations, 
                 MinibatchSource.InfinitelyRepeat, 
                 randomize);

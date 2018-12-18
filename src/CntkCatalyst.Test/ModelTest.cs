@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using CNTK;
@@ -8,10 +9,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace CntkCatalyst.Test.Models
 {
     [TestClass]
-    public class SequentialTest
+    public class ModelTest
     {
         [TestMethod]
-        public void Sequential_Use_Case()
+        public void Model_Use_Case()
         {
             var inputShape = new int[] { 28, 28, 1 };
             var numberOfClasses = 10;
@@ -33,16 +34,38 @@ namespace CntkCatalyst.Test.Models
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
-            var model = new Sequential(network, dataType, device);
+            // setup input and target variables.
+            var inputVariable = network.Arguments[0];
+            var targetVariable = Variable.InputVariable(network.Output.Shape, dataType);
 
-            model.Compile(p => Learners.MomentumSGD(p),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t));
+            // loss
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
 
-            var trainSource = new MemoryMinibatchSource(observations, targets, seed: 232, randomize: true);
+            // setup trainer.
+            var learner = Learners.MomentumSGD(network.Parameters());
+            var trainer = CNTKLib.CreateTrainer(network, lossFunc, metricFunc, new LearnerVector { learner });
+
+            var model = new Model(trainer, network, dataType, device);
+
+            // setup name to data.
+            var nameToData = new Dictionary<string, MemoryMinibatchData>
+            {
+                { "observations", observations },
+                { "targets", targets }
+            };
+
+            // setup name to variable
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { "observations", inputVariable },
+                { "targets", targetVariable },
+            };
+
+            var trainSource = new MemoryMinibatchSource(nameToVariable, nameToData, seed: 232, randomize: true);
+
             model.Fit(trainSource, batchSize: 32, epochs: 10);
-
-            var evalSource = new MemoryMinibatchSource(observations, targets, seed: 232, randomize: false);
+            
             (var loss, var metric) = model.Evaluate(trainSource);
 
             Trace.WriteLine($"Final evaluation - Loss: {loss}, Metric: {metric}");

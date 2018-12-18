@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using CNTK;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CntkCatalyst.Test
@@ -24,18 +26,34 @@ namespace CntkCatalyst.Test
         };
 
         [TestMethod]
-        public void MemoryMinibatchSource()
+        public void MemoryMinibatchSource_GetNextMinibatch()
         {
-            var observations = new MemoryMinibatchData(m_observationsData, new int[] { 5 }, 9);
-            var targets = new MemoryMinibatchData(m_targetData, new int[] { 1 }, 9);
+            var observationsShape = new int[] { 5 };
+            var observations = new MemoryMinibatchData(m_observationsData, observationsShape, 9);
+            var targetsShape = new int[] { 1 };
+            var targets = new MemoryMinibatchData(m_targetData, targetsShape, 9);
 
-            var sut = new MemoryMinibatchSource(observations, targets, 5, false);
+            // setup name to data map.
+            var nameToData = new Dictionary<string, MemoryMinibatchData>
+            {
+                { "observations", observations },
+                { "targets", targets }
+            };
+
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { "observations", Variable.InputVariable(observationsShape, DataType.Float) },
+                { "targets", Variable.InputVariable(targetsShape, DataType.Float) }
+            };
+
+            var sut = new MemoryMinibatchSource(nameToVariable, nameToData, 5, false);
+            var device = DeviceDescriptor.CPUDevice;
 
             for (int i = 0; i < 30; i++)
             {
-                var minibatch = sut.GetNextMinibatch(3);
-                var obs = minibatch.observations;
-                var tar = minibatch.targets;
+                var (minibatch, isSweepEnd) = sut.GetNextMinibatch(3, device);
+                var obs = minibatch[nameToVariable["observations"]].GetDenseData<float>(nameToVariable["observations"]);
+                var tar = minibatch[nameToVariable["targets"]].GetDenseData<float>(nameToVariable["targets"]);
             }
         }
     }

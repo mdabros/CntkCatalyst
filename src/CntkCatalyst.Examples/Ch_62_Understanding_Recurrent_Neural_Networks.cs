@@ -34,22 +34,6 @@ namespace CntkCatalyst.Examples
             var numberOfClasses = 2;
             var outputShape = new int[] { numberOfClasses };
 
-            // Setup minibatch sources.
-            // Network will be trained using the training set,
-            // and tested using the test set.
-            var featuresName = "x";
-            var targetsName = "y";
-
-            // The order of the training data is randomize.
-            var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: true);
-            var trainingSource = new CntkMinibatchSource(train, featuresName, targetsName);
-
-            // Notice randomization is switched off for test data.
-            var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: false);
-            var testSource = new CntkMinibatchSource(test, featuresName, targetsName);
-
             // Define data type and device for the model.
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
@@ -70,22 +54,48 @@ namespace CntkCatalyst.Examples
             // wrap network in sequenceLast.
             network = CNTKLib.SequenceLast(network);
 
+            // Get input and target variables from network.
+            var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(outputShape, dataType,
                 dynamicAxes: new List<Axis>() { Axis.DefaultBatchAxis() },
                 isSparse: false);
 
-            // Create the network.
-            var model = new Sequential(network, dataType, device);
+            // setup loss and learner.
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
 
-            // Compile the network with the selected learner, loss and metric,
-            // and custom target variable.
-            model.Compile(p => Learners.Adam(p),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t),
-               targetVariable);
+            // setup trainer.
+            var learner = Learners.Adam(network.Parameters());
+            var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
+            // Create the network.
+            var model = new Model(trainer, network, dataType, device);
 
             // Write model summary.
             Trace.WriteLine(model.Summary());
+
+            // Setup minibatch sources.
+            // Network will be trained using the training set,
+            // and tested using the test set.
+            var featuresName = "x";
+            var targetsName = "y";
+
+            // setup name to variable map.
+            var nameToVariable = new Dictionary<string, Variable>
+            {
+                { featuresName, inputVariable },
+                { targetsName, targetVariable },
+            };
+
+            // The order of the training data is randomize.
+            var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, randomize: true);
+            var trainingSource = new CntkMinibatchSource(train, nameToVariable);
+
+            // Notice randomization is switched off for test data.
+            var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
+                numberOfClasses, inputShape, randomize: false);
+            var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
             var history = model.Fit(trainingSource, epochs: 100, batchSize: 512,
@@ -124,7 +134,7 @@ namespace CntkCatalyst.Examples
             return CNTKLib.CreateCompositeMinibatchSource(minibatchSourceConfig);
         }
 
-        static void TraceLossValidationHistory(Dictionary<string, List<float>> history)
+        static void TraceLossValidationHistory(Dictionary<string, List<double>> history)
         {
             foreach (var item in history)
             {

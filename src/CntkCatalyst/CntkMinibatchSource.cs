@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using CNTK;
 
 namespace CntkCatalyst
@@ -6,26 +8,41 @@ namespace CntkCatalyst
     public class CntkMinibatchSource : IMinibatchSource
     {
         readonly MinibatchSource m_minibatchSource;
+        readonly IDictionary<string, Variable> m_nameToVariable;
 
-        public CntkMinibatchSource(MinibatchSource minibatchSource, string featuresName, string labelsName)
+        public CntkMinibatchSource(MinibatchSource minibatchSource, IDictionary<string, Variable> nameToVariable)
         {
+            m_nameToVariable = nameToVariable ?? throw new ArgumentNullException(nameof(nameToVariable));
             m_minibatchSource = minibatchSource ?? throw new ArgumentNullException(nameof(minibatchSource));
-            FeaturesName = featuresName;
-            TargetsName = labelsName;
         }
 
-        public string FeaturesName { get; }
-        public string TargetsName { get; }
-
-        public UnorderedMapStreamInformationMinibatchData GetNextMinibatch(uint minibatchSizeInSamples, 
+        public (IDictionary<Variable, Value> minibatch, bool isSweepEnd) GetNextMinibatch(int minibatchSizeInSamples, 
             DeviceDescriptor device)
         {
-            return m_minibatchSource.GetNextMinibatch(minibatchSizeInSamples, device);            
+            var streamInfoToMinibatchData = m_minibatchSource.GetNextMinibatch((uint)minibatchSizeInSamples, device);
+            var isSweepEnd = streamInfoToMinibatchData.Values.Any(a => a.sweepEnd);
+
+            var minibatch = AssignDataFromMinibatch(streamInfoToMinibatchData);
+
+            return (minibatch, isSweepEnd);
         }
 
-        public StreamInformation StreamInfo(string streamName)
+        Dictionary<Variable, Value> AssignDataFromMinibatch(IDictionary<StreamInformation, MinibatchData> streamInfoToMinibatchData)
         {
-            return m_minibatchSource.StreamInfo(streamName);
+            var minibatch = new Dictionary<Variable, Value>();
+
+            foreach (var kvp in m_nameToVariable)
+            {
+                var name = kvp.Key;
+                var variable = kvp.Value;
+                var streamInfo = m_minibatchSource.StreamInfo(name);
+
+                var minibatchData = streamInfoToMinibatchData[streamInfo];
+                var value = streamInfoToMinibatchData[streamInfo].data;
+                minibatch.Add(variable, value);
+            }
+
+            return minibatch;
         }
     }
 }

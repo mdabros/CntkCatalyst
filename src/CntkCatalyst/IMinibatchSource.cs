@@ -1,15 +1,11 @@
-﻿using CNTK;
+﻿using System.Collections.Generic;
+using CNTK;
 
 namespace CntkCatalyst
 {
     public interface IMinibatchSource
     {
-        UnorderedMapStreamInformationMinibatchData GetNextMinibatch(uint minibatchSizeInSamples, 
-            DeviceDescriptor device);
-
-        StreamInformation StreamInfo(string streamName);
-
-        string FeaturesName { get; }
-        string TargetsName { get; }
+        (IDictionary<Variable, Value> minibatch, bool isSweepEnd) GetNextMinibatch(
+            int minibatchSizeInSamples, DeviceDescriptor device);
     }
 }

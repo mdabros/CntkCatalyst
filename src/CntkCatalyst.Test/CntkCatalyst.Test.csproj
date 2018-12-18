@@ -79,7 +79,8 @@
     <Compile Include="LearnersTest.cs" />
     <Compile Include="LossesTest.cs" />
     <Compile Include="MemoryMinibatchSourceTest.cs" />
-    <Compile Include="SequentialTest.cs" />
+    <Compile Include="TrainingLoopRefactor.cs" />
+    <Compile Include="ModelTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
