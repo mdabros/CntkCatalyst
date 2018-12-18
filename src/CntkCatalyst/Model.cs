@@ -75,7 +75,7 @@ namespace CntkCatalyst
 
                     if (validationMinibatchSource != null)
                     {
-                        (var validationLoss, var validationMetric) = Evaluate(validationMinibatchSource, batchSize);
+                        (var validationLoss, var validationMetric) = Evaluate(validationMinibatchSource);
                         traceOutput += $" - ValidationLoss = {validationLoss:F8}, ValidationMetric = {validationMetric:F8}";
 
                         lossValidationHistory[m_validationLossName].Add(validationLoss);
@@ -89,26 +89,24 @@ namespace CntkCatalyst
             return lossValidationHistory;
         }
 
-        public (double loss, double metric) Evaluate(IMinibatchSource minibatchSource, int batchSize = 32)
+        public (double loss, double metric) Evaluate(IMinibatchSource minibatchSource)
         {
             // create loss and metric evaluators.
-            using (var lossEvaluator = new BatchEvaluator(CNTKLib.CreateEvaluator(m_loss), m_device))
-            using (var metricEvaluator = new BatchEvaluator(CNTKLib.CreateEvaluator(m_metric), m_device))
+            using (var lossEvaluator = new MetricEvaluator(m_loss, m_device))
+            using (var metricEvaluator = new MetricEvaluator(m_metric, m_device))
             {
                 bool isSweepEnd = false;
 
-                // TODO: Check if batchSize is larger than sample count.
-                //var evaluationBatchSize = x.SampleCount < batchSize ? x.SampleCount : batchSize;
-                var evaluationBatchSize = batchSize;
-
                 while (!isSweepEnd)
                 {
+                    // TODO: Add Support for other evaluation batch sizes.
+                    const int evaluationBatchSize = 1;
                     var nextMinibatch = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
                     var minibatch = nextMinibatch.minibatch;
                     isSweepEnd = nextMinibatch.isSweepEnd;
 
-                    lossEvaluator.EvalauteNextStep(minibatch, batchSize);
-                    metricEvaluator.EvalauteNextStep(minibatch, batchSize);
+                    lossEvaluator.EvalauteNextStep(minibatch, evaluationBatchSize);
+                    metricEvaluator.EvalauteNextStep(minibatch, evaluationBatchSize);
                 }
 
                 var finalLoss = lossEvaluator.CurrentMetric;
@@ -127,6 +125,7 @@ namespace CntkCatalyst
 
             while (!isSweepEnd)
             {
+                // TODO: Add Support for other prediction batch sizes.
                 const int predictionBatchSize = 1;
                 var nextMinibatch = minibatchSource.GetNextMinibatch(predictionBatchSize, m_device);
                 var minibatch = nextMinibatch.minibatch;
