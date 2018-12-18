@@ -9,12 +9,10 @@ namespace CntkCatalyst
 {
     public class Model
     {
-        Learner m_learner;
         Function m_loss;
         Function m_metric;
-
-        Variable m_inputVariable;
-        Variable m_targetVariable;
+        Trainer m_trainer;
+        IDictionary<StreamInformation, Variable> m_streamToVariable;
 
         const string m_lossName = "Loss";
         const string m_metricName = "Metric";
@@ -36,118 +34,78 @@ namespace CntkCatalyst
 
         public Function Network;
 
-        public void Compile(Func<IList<Parameter>, Learner> learnerCreator,
-            Func<Variable, Variable, Function> lossCreator,
-            Func<Variable, Variable, Function> metricCreator,
-            Variable targetVariable = null)
+        // TODO: Move compile parameters to constructor
+        public void Compile(Trainer trainer,
+            IDictionary<StreamInformation, Variable> streamToVariable)
         {
-            // Get input and target variables from network.
-            m_inputVariable = Network.Arguments[0];
-            var targetShape = Network.Output.Shape;
+            m_streamToVariable = streamToVariable;
+            m_trainer = trainer;
 
-            // TODO: find a better design for specifying custom input variables.
-            m_targetVariable = targetVariable ?? Variable.InputVariable(targetShape, m_dataType);
-
-            // create loss and metric.
-            m_loss = lossCreator(Network.Output, m_targetVariable);
-            m_metric = metricCreator(Network.Output, m_targetVariable);
-
-            // create learner.
-            m_learner = learnerCreator(Network.Parameters());
+            // Set loss and metric.
+            m_loss = trainer.LossFunction();
+            m_metric = trainer.EvaluationFunction();
         }
 
-        public Dictionary<string, List<float>> Fit(IMinibatchSource trainMinibatchSource = null, int batchSize = 32, int epochs = 1,
+        public Dictionary<string, List<double>> Fit(IMinibatchSource trainMinibatchSource = null, int batchSize = 32, int epochs = 1,
             IMinibatchSource validationMinibatchSource = null)
 
         {
-            // setup trainer.
-            var trainer = CNTKLib.CreateTrainer(Network, m_loss, m_metric, new LearnerVector { m_learner });
+            // setup fitter.
+            //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
+            var fitter = new Fitter(m_trainer, m_streamToVariable, m_device);
 
             // store epoch history
-            var lossValidationHistory = new Dictionary<string, List<float>>
+            var lossValidationHistory = new Dictionary<string, List<double>>
             {
-                { m_lossName, new List<float>() },
-                { m_metricName, new List<float>() },
-                { m_validationLossName, new List<float>() },
-                { m_validationMetricName, new List<float>() },
+                { m_lossName, new List<double>() },
+                { m_metricName, new List<double>() },
+                { m_validationLossName, new List<double>() },
+                { m_validationMetricName, new List<double>() },
             };
-
-            // variables for training loop.            
-            var inputMap = new Dictionary<Variable, Value>();
-
-            var lossSum = 0f;
-            var metricSum = 0f;
-            var totalSampleCount = 0;
 
             for (int epoch = 0; epoch < epochs; )
             {
                 var (minibatch, isSweepEnd) = trainMinibatchSource.GetNextMinibatch(batchSize, m_device);
 
-                var obserationsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.FeaturesName);
-                var targetsStreamInfo = trainMinibatchSource.StreamInfo(trainMinibatchSource.TargetsName);
+                fitter.FitNextStep(minibatch);
 
-                using (var observationsData = minibatch[obserationsStreamInfo].data)
-                using (var targetsData = minibatch[targetsStreamInfo].data)
+                if (isSweepEnd)
                 {
-                    inputMap.Add(m_inputVariable, observationsData);
-                    inputMap.Add(m_targetVariable, targetsData);
+                    var currentLoss = fitter.CurrentLoss;
+                    lossValidationHistory[m_lossName].Add(currentLoss);
 
-                    trainer.TrainMinibatch(inputMap, false, m_device);
+                    var currentMetric = fitter.CurrentMetric;
+                    lossValidationHistory[m_metricName].Add(currentMetric);
 
-                    var lossValue = (float)trainer.PreviousMinibatchLossAverage();  
-                    var metricValue = (float)trainer.PreviousMinibatchEvaluationAverage();
+                    var traceOutput = $"Epoch: {epoch + 1:000} Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
+                    fitter.ResetLossAccumulation();
 
-                    // Accumulate loss/metric.
-                    lossSum += lossValue * batchSize;
-                    metricSum += metricValue * batchSize;
-                    totalSampleCount += batchSize;
+                    ++epoch;
 
-                    if (isSweepEnd)
+                    if (validationMinibatchSource != null)
                     {
-                        var currentLoss = lossSum / totalSampleCount;
-                        lossValidationHistory[m_lossName].Add(currentLoss);
+                        (var validationLoss, var validationMetric) = Evaluate(validationMinibatchSource, batchSize);
+                        traceOutput += $" - ValidationLoss = {validationLoss:F8}, ValidationMetric = {validationMetric:F8}";
 
-                        var currentMetric = metricSum / totalSampleCount;
-                        lossValidationHistory[m_metricName].Add(currentMetric);
-
-                        var traceOutput = $"Epoch: {epoch + 1:000} Loss = {currentLoss:F8}, Metric = {currentMetric:F8}";
-
-                        ++epoch;
-                        lossSum = 0;
-                        metricSum = 0;
-                        totalSampleCount = 0;
-
-                        if (validationMinibatchSource != null)
-                        {
-                            (var validationLoss, var validationMetric) = Evaluate(validationMinibatchSource, batchSize);
-                            traceOutput += $" - ValidationLoss = {validationLoss:F8}, ValidationMetric = {validationMetric:F8}";
-
-                            lossValidationHistory[m_validationLossName].Add(validationLoss);
-                            lossValidationHistory[m_validationMetricName].Add(validationMetric);
-                        }
-
-                        Trace.WriteLine(traceOutput);
+                        lossValidationHistory[m_validationLossName].Add(validationLoss);
+                        lossValidationHistory[m_validationMetricName].Add(validationMetric);
                     }
 
-                    // Ensure cleanup
-                    inputMap.Clear();
+                    Trace.WriteLine(traceOutput);
                 }
             }
 
             return lossValidationHistory;
         }
 
-        public (float loss, float metric) Evaluate(IMinibatchSource minibatchSource, int batchSize = 32)
+        public (double loss, double metric) Evaluate(IMinibatchSource minibatchSource, int batchSize = 32)
         {
             // create loss and metric evaluators.
-            using (var lossEvaluator = CNTKLib.CreateEvaluator(m_loss))
-            using (var metricEvaluator = CNTKLib.CreateEvaluator(m_metric))       
-            using (var inputMap = new UnorderedMapVariableMinibatchData())
-            {
-                var lossSum = 0.0;
-                var metricSum = 0.0;
-                var totalSampleCount = 0;
 
+            //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
+            using (var lossEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_loss), m_streamToVariable, m_device))
+            using (var metricEvaluator = new BatchEvalutator(CNTKLib.CreateEvaluator(m_metric), m_streamToVariable, m_device))
+            {
                 bool isSweepEnd = false;
 
                 // TODO: Check if batchSize is larger than sample count.
@@ -160,29 +118,12 @@ namespace CntkCatalyst
                     var minibatch = nextMinibatch.minibatch;
                     isSweepEnd = nextMinibatch.isSweepEnd;
 
-                    var obserationsStreamInfo = minibatchSource.StreamInfo(minibatchSource.FeaturesName);
-                    var targetsStreamInfo = minibatchSource.StreamInfo(minibatchSource.TargetsName);
-
-                    using (var observations = minibatch[obserationsStreamInfo])
-                    using (var targets = minibatch[targetsStreamInfo])
-                    {
-                        inputMap.Add(m_inputVariable, observations);
-                        inputMap.Add(m_targetVariable, targets);
-
-                        var lossValue = lossEvaluator.TestMinibatch(inputMap);
-                        var metricValue = metricEvaluator.TestMinibatch(inputMap);
-
-                        // Accumulate loss/metric.
-                        lossSum += lossValue * evaluationBatchSize;
-                        metricSum += metricValue * evaluationBatchSize;
-                        totalSampleCount += evaluationBatchSize;
-
-                        inputMap.Clear();
-                    }
+                    lossEvaluator.EvalauteNextStep(minibatch);
+                    metricEvaluator.EvalauteNextStep(minibatch);
                 }
 
-                var finalLoss = lossSum / totalSampleCount;
-                var finalMetric = metricSum / totalSampleCount;
+                var finalLoss = lossEvaluator.CurrentMetric;
+                var finalMetric = metricEvaluator.CurrentMetric;
 
                 return ((float)finalLoss, (float)finalMetric);
             }
@@ -191,8 +132,9 @@ namespace CntkCatalyst
         public IList<IList<float>> Predict(IMinibatchSource minibatchSource)
         {
             var predictions = new List<IList<float>>();
-            var outputDataMap = new Dictionary<Variable, Value>();
-            var inputMap = new Dictionary<Variable, Value>();
+
+            //TODO: stream infos from minibatch source should be used, not predefined, these could be from another source.
+            var predictor = new Predictor(Network, m_streamToVariable, m_device);
 
             bool isSweepEnd = false;
 
@@ -202,28 +144,9 @@ namespace CntkCatalyst
                 var nextMinibatch = minibatchSource.GetNextMinibatch(evaluationBatchSize, m_device);
                 var minibatch = nextMinibatch.minibatch;
                 isSweepEnd = nextMinibatch.isSweepEnd;
-                
-                var obserationsStreamInfo = minibatchSource.StreamInfo(minibatchSource.FeaturesName);
-                var targetsStreamInfo = minibatchSource.StreamInfo(minibatchSource.TargetsName);
 
-                using (var observations = minibatch[obserationsStreamInfo])
-                {
-                    inputMap.Add(m_inputVariable, observations.data);
-
-                    var outputVar = Network.Output;
-                    outputDataMap.Add(outputVar, null);
-
-                    Network.Evaluate(inputMap, outputDataMap, m_device);
-                    var outputVal = outputDataMap[outputVar];
-
-                    var batchPrediction = outputVal.GetDenseData<float>(outputVar);
-                    // assumes batch size 1
-                    predictions.Add(batchPrediction.Single());
-
-                    // Ensure cleanup, call erase.
-                    inputMap.Clear();
-                    outputDataMap.Clear();
-                }
+                var batchPredictions = predictor.PredictNextStep(minibatch);
+                predictions.AddRange(batchPredictions);
             }
 
             return predictions;

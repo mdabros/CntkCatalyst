@@ -43,12 +43,12 @@ namespace CntkCatalyst.Examples
             // The order of the training data is randomize.
             var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, randomize: true);
-            var trainingSource = new CntkMinibatchSource(train, featuresName, targetsName);
+            var trainingSource = new CntkMinibatchSource(train);
 
             // Notice randomization is switched off for test data.
             var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, randomize: false);
-            var testSource = new CntkMinibatchSource(test, featuresName, targetsName);
+            var testSource = new CntkMinibatchSource(test);
 
             // Define data type and device for the model.
             var dataType = DataType.Float;
@@ -71,19 +71,31 @@ namespace CntkCatalyst.Examples
             // wrap network in sequenceLast.
             network = CNTKLib.SequenceLast(network);
 
+            // Create the network.
+            var model = new Model(network, dataType, device);
+
+            // Get input and target variables from network.
+            var inputVariable = network.Arguments[0];
             var targetVariable = Variable.InputVariable(outputShape, dataType,
                 dynamicAxes: new List<Axis>() { Axis.DefaultBatchAxis() },
                 isSparse: false);
 
-            // Create the network.
-            var model = new Model(network, dataType, device);
+            // setup streaminfo to variable map.
+            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
+            {
+                { trainingSource.StreamInfo(featuresName), inputVariable },
+                { trainingSource.StreamInfo(targetsName), targetVariable },
+            };
 
-            // Compile the network with the selected learner, loss and metric,
-            // and custom target variable.
-            model.Compile(p => Learners.Adam(p),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t),
-               targetVariable);
+            // setup loss and learner.
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+            var learner = Learners.RMSProp(network.Parameters());
+
+            var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
+            // Compile the network with the selected learner, loss and metric.
+            model.Compile(trainer, streamInfoToVariable);
 
             // Train the model using the training set.
             var history = model.Fit(trainingSource, epochs: 100, batchSize: 512,
@@ -122,7 +134,7 @@ namespace CntkCatalyst.Examples
             return CNTKLib.CreateCompositeMinibatchSource(minibatchSourceConfig);
         }
 
-        static void TraceLossValidationHistory(Dictionary<string, List<float>> history)
+        static void TraceLossValidationHistory(Dictionary<string, List<double>> history)
         {
             foreach (var item in history)
             {

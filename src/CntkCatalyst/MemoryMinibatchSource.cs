@@ -16,87 +16,47 @@ namespace CntkCatalyst
         readonly float[] m_minibatch;
         bool m_randomize;
 
-        MemoryMinibatchData m_observations;
-        MemoryMinibatchData m_targets;
-
-        int m_singleObservationDataSize;
-        int m_singleTargetDataSize;
+        IDictionary<string, MemoryMinibatchData> m_data;
 
         readonly Dictionary<string, StreamInformation> m_streamInfos;
 
-        const string m_featuresName = "features";
-        const string m_targetsName = "targets";
-               
-        public MemoryMinibatchSource(MemoryMinibatchData observations,
-            MemoryMinibatchData targets,
+        public MemoryMinibatchSource(IDictionary<string, MemoryMinibatchData> data,
             int seed,
             bool randomize)
         {
-            m_observations = observations ?? throw new ArgumentNullException(nameof(observations));
-            m_targets = targets ?? throw new ArgumentNullException(nameof(targets));
+            m_data = data ?? throw new ArgumentNullException(nameof(data));
 
-            if (observations.SampleCount != targets.SampleCount)
+            if(data.Count <= 0)
             {
-                throw new ArgumentException($"observation samples: {observations.SampleCount}" +
-                    $" differs from target samples: {targets.SampleCount}");
+                throw new ArgumentException("No items added to data dictionary");
             }
 
-            m_singleObservationDataSize = observations.SampleShape
-                .Aggregate((d1, d2) => d1 * d2);
+            var sampleCount = data.First().Value.SampleCount;
+            foreach (var item in data)
+            {
+                if(sampleCount != item.Value.SampleCount)
+                {
+                    throw new ArgumentException($"Sample count not consistent: " 
+                        + string.Join(",", data.Select(v => $"{v.Key}: samples: {v.Value.SampleCount}")));
+                }
+            }
 
-            m_singleTargetDataSize = targets.SampleShape
-                .Aggregate((d1, d2) => d1 * d2); ;
-
-            m_currentSweepIndeces = Enumerable.Range(0, TotalSampleCount).ToArray();
+            m_currentSweepIndeces = Enumerable.Range(0, sampleCount).ToArray();
             m_random = new Random(seed);
             m_randomize = randomize;
             m_minibatch = Array.Empty<float>();
 
-            m_streamInfos = new Dictionary<string, StreamInformation>
-            {
-                { m_featuresName, new StreamInformation { m_name = m_featuresName } },
-                { m_targetsName, new StreamInformation { m_name = m_targetsName } },
-            };
+            m_streamInfos = m_data.ToDictionary(v => v.Key, v => new StreamInformation { m_name = v.Key });
         }
-
-        public int TotalSampleCount => m_observations.SampleCount;
-        public string FeaturesName => m_featuresName;
-        public string TargetsName => m_targetsName;
 
         public (IDictionary<StreamInformation, MinibatchData> minibatch, bool isSweepEnd) GetNextMinibatch(
             int minibatchSizeInSamples, DeviceDescriptor device)
         {
-            var minibatchData = GetNextMinibatch(minibatchSizeInSamples);
-
-            var batchObservations = Value.CreateBatch<float>(m_observations.SampleShape, minibatchData.observations, device, true);
-            var batchTarget = Value.CreateBatch<float>(m_targets.SampleShape, minibatchData.targets, device, true);
-
-            var minibatch = new Dictionary<StreamInformation, MinibatchData>
-            {
-                { StreamInfo(m_featuresName), new MinibatchData(batchObservations,
-                    (uint)minibatchSizeInSamples, minibatchData.isSweepEnd) },
-
-                { StreamInfo(m_targetsName), new MinibatchData(batchTarget,
-                    (uint)minibatchSizeInSamples, minibatchData.isSweepEnd) },
-            };
-
-            var isSweepEnd = minibatchData.isSweepEnd;
-
-            return (minibatch, isSweepEnd);
-        }
-
-        public StreamInformation StreamInfo(string streamName)
-        {
-            return m_streamInfos[streamName];
-        }
-
-        public (float[] observations, float[] targets, bool isSweepEnd) GetNextMinibatch(int minibatchSizeInSamples)
-        {
             CheckIfNewSweepAndShuffle();
 
-            var batchIndeces = GetBatchIndeces(minibatchSizeInSamples, m_currentBatchStartIndex);
+            UpdateBatchIndeces(minibatchSizeInSamples, m_currentBatchStartIndex);
 
-            (var observationsMinibatch, var targetsMiniBatch) = NextBatch();
+            var minibatchItems = NextBatch(device);
 
             m_currentBatchStartIndex += minibatchSizeInSamples;
 
@@ -107,29 +67,50 @@ namespace CntkCatalyst
                 m_currentBatchStartIndex = -1;
             }
 
-            return (observationsMinibatch, targetsMiniBatch, isSweepEnd);
+            var minibatch = minibatchItems.ToDictionary(v => v.Key, 
+                v => new MinibatchData(v.Value, (uint)minibatchSizeInSamples, isSweepEnd));
+
+            return (minibatch, isSweepEnd);
         }
 
-        private (float[] observations, float[] targets) NextBatch()
+        public StreamInformation StreamInfo(string streamName)
         {
+            return m_streamInfos[streamName];
+        }
+
+        Dictionary<StreamInformation, Value> NextBatch(DeviceDescriptor device)
+        {
+            var minibatch = new Dictionary<StreamInformation, Value>();
+
+            foreach (var item in m_data)
+            {
+                var sampleShape = item.Value.SampleShape;
+                var samplesData = CopyMinibatchSamples(item.Value);
+                var name = item.Key;
+
+                var value = Value.CreateBatch<float>(sampleShape, samplesData, device, true);
+                minibatch.Add(StreamInfo(name), value);
+            }
+
+            return minibatch;
+        }
+
+        float[] CopyMinibatchSamples(MemoryMinibatchData data)
+        {
+            var sampleSize = data.SampleShape.Aggregate((v1, v2) => v1 * v2);
             var batchSize = m_batchIndeces.Length;
-            var observationsMiniBatch = new float[batchSize * m_singleObservationDataSize];
-            var targetMinibatch = new float[batchSize * m_singleTargetDataSize];
+            var minibatchItem = new float[batchSize * sampleSize];
 
             for (int i = 0; i < m_batchIndeces.Length; i++)
             {
                 var batchIndex = m_batchIndeces[i];
 
-                var observationStartIndex = batchIndex * m_singleObservationDataSize;
-                Array.Copy(m_observations.Data, observationStartIndex, observationsMiniBatch,
-                    i * m_singleObservationDataSize, m_singleObservationDataSize);
-
-                var targetStartIndex = batchIndex * m_singleTargetDataSize;
-                Array.Copy(m_targets.Data, targetStartIndex, targetMinibatch,
-                    i * m_singleTargetDataSize, m_singleTargetDataSize);
+                var startIndex = batchIndex * sampleSize;
+                Array.Copy(data.Data, startIndex, minibatchItem,
+                    i * sampleSize, sampleSize);
             }
 
-            return (observationsMiniBatch, targetMinibatch);
+            return minibatchItem;
         }
 
         void CheckIfNewSweepAndShuffle()
@@ -145,7 +126,7 @@ namespace CntkCatalyst
             }
         }
 
-        int[] GetBatchIndeces(int minibatchSizeInSamples, int batchStartIndex)
+        void UpdateBatchIndeces(int minibatchSizeInSamples, int batchStartIndex)
         {
             if (m_batchIndeces.Length != minibatchSizeInSamples)
             {
@@ -158,7 +139,6 @@ namespace CntkCatalyst
                 var sweepIndex = (i + batchStartIndex) % m_currentSweepIndeces.Length;
                 m_batchIndeces[i] = m_currentSweepIndeces[sweepIndex];
             }
-            return m_batchIndeces;
         }
 
         static void Shuffle<TIndex>(TIndex[] array, Random random)

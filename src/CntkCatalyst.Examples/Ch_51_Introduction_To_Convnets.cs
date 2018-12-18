@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -41,12 +42,12 @@ namespace CntkCatalyst.Examples
             // The order of the training data is randomize.
             var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, randomize: true);
-            var trainingSource = new CntkMinibatchSource(train, featuresName, targetsName);
+            var trainingSource = new CntkMinibatchSource(train);
 
             // Notice randomization is switched off for test data.
             var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, randomize: false);
-            var testSource = new CntkMinibatchSource(test, featuresName, targetsName);
+            var testSource = new CntkMinibatchSource(test);
 
             // Define data type and device for the model.
             var dataType = DataType.Float;
@@ -82,10 +83,26 @@ namespace CntkCatalyst.Examples
             // Create the network.
             var model = new Model(network, dataType, device);
 
+            // Get input and target variables from network.
+            var inputVariable = network.Arguments[0];
+            var targetVariable = Variable.InputVariable(outputShape, dataType);
+
+            // setup streaminfo to variable map.
+            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
+            {
+                { trainingSource.StreamInfo(featuresName), inputVariable },
+                { trainingSource.StreamInfo(targetsName), targetVariable },
+            };
+
+            // setup loss and learner.
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+            var learner = Learners.RMSProp(network.Parameters());
+
+            var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
             // Compile the network with the selected learner, loss and metric.
-            model.Compile(p => Learners.Adam(p),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t));
+            model.Compile(trainer, streamInfoToVariable);
 
             // Train the model using the training set.
             model.Fit(trainingSource, epochs: 5, batchSize: 64);

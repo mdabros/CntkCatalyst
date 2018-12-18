@@ -68,8 +68,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Predictor.cs" />
+    <Compile Include="BatchEvalutator.cs" />
     <Compile Include="CntkMinibatchSource.cs" />
     <Compile Include="CntkUtils.cs" />
+    <Compile Include="Fitter.cs" />
     <Compile Include="IMinibatchSource.cs" />
     <Compile Include="Initializers.cs" />
     <Compile Include="LayerFunctions\Layers.Conv1D.cs" />

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using CNTK;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CntkCatalyst.Test
@@ -29,13 +31,20 @@ namespace CntkCatalyst.Test
             var observations = new MemoryMinibatchData(m_observationsData, new int[] { 5 }, 9);
             var targets = new MemoryMinibatchData(m_targetData, new int[] { 1 }, 9);
 
-            var sut = new MemoryMinibatchSource(observations, targets, 5, false);
+            // setup name to data map.
+            var nameToData = new Dictionary<string, MemoryMinibatchData>
+            {
+                { "observations", observations },
+                { "targets", targets }
+            };
+            var sut = new MemoryMinibatchSource(nameToData, 5, false);
+            var device = DeviceDescriptor.CPUDevice;
 
             for (int i = 0; i < 30; i++)
             {
-                var minibatch = sut.GetNextMinibatch(3);
-                var obs = minibatch.observations;
-                var tar = minibatch.targets;
+                var (minibatch, isSweepEnd) = sut.GetNextMinibatch(3, device);
+                var obs = minibatch[sut.StreamInfo("observations")];
+                var tar = minibatch[sut.StreamInfo("targets")];
             }
         }
     }

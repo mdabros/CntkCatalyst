@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using CNTK;
@@ -19,6 +20,15 @@ namespace CntkCatalyst.Test.Models
 
             (var observations, var targets) = CreateArtificialData(inputShape, outputShape, observationCount: 10000);
 
+            // setup name to data map.
+            var nameToData = new Dictionary<string, MemoryMinibatchData>
+            {
+                { "observations", observations },
+                { "targets", targets }
+            };
+
+            var trainSource = new MemoryMinibatchSource(nameToData, seed: 232, randomize: true);
+
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
 
@@ -35,14 +45,31 @@ namespace CntkCatalyst.Test.Models
 
             var model = new Model(network, dataType, device);
 
-            model.Compile(p => Learners.MomentumSGD(p),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t));
+            // setup input and target variables.
+            var inputVariable = network.Arguments[0];
+            var targetVariable = Variable.InputVariable(network.Output.Shape, dataType);
 
-            var trainSource = new MemoryMinibatchSource(observations, targets, seed: 232, randomize: true);
+            // loss
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+
+            // setup learner.
+            var learner = Learners.MomentumSGD(network.Parameters());
+
+            // setup trainer.
+            var trainer = CNTKLib.CreateTrainer(network, lossFunc, metricFunc, new LearnerVector { learner });
+
+            // setup streaminfo to variable map.
+            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
+            {
+                { trainSource.StreamInfo("observations"), inputVariable },
+                { trainSource.StreamInfo("targets"), targetVariable },
+            };
+
+            model.Compile(trainer, streamInfoToVariable);
+
             model.Fit(trainSource, batchSize: 32, epochs: 10);
-
-            var evalSource = new MemoryMinibatchSource(observations, targets, seed: 232, randomize: false);
+            
             (var loss, var metric) = model.Evaluate(trainSource);
 
             Trace.WriteLine($"Final evaluation - Loss: {loss}, Metric: {metric}");

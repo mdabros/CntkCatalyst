@@ -38,17 +38,17 @@ namespace CntkCatalyst.Examples
 
             var train = CreateMinibatchSource(mapFiles.trainFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, augmentation: true);
-            var trainingSource = new CntkMinibatchSource(train, featuresName, targetsName);
+            var trainingSource = new CntkMinibatchSource(train);
 
             // Notice augmentation is switched off for validation data.
             var valid = CreateMinibatchSource(mapFiles.validFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, augmentation: false); 
-            var validationSource = new CntkMinibatchSource(valid, featuresName, targetsName);
+            var validationSource = new CntkMinibatchSource(valid);
 
             // Notice augmentation is switched off for test data.
             var test = CreateMinibatchSource(mapFiles.testFilePath, featuresName, targetsName,
                 numberOfClasses, inputShape, augmentation: false); 
-            var testSource = new CntkMinibatchSource(test, featuresName, targetsName);
+            var testSource = new CntkMinibatchSource(test);
 
             // Define data type and device for the model.
             var dataType = DataType.Float;
@@ -85,10 +85,26 @@ namespace CntkCatalyst.Examples
             // Create the network.
             var model = new Model(network, dataType, device);
 
+            // Get input and target variables from network.
+            var inputVariable = network.Arguments[0];
+            var targetVariable = Variable.InputVariable(outputShape, dataType);
+
+            // setup streaminfo to variable map.
+            var streamInfoToVariable = new Dictionary<StreamInformation, Variable>
+            {
+                { trainingSource.StreamInfo(featuresName), inputVariable },
+                { trainingSource.StreamInfo(targetsName), targetVariable },
+            };
+
+            // setup loss and learner.
+            var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+            var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
+            var learner = Learners.RMSProp(network.Parameters());
+
+            var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
             // Compile the network with the selected learner, loss and metric.
-            model.Compile(p => Learners.Adam(p, learningRate: 0.0001),
-               (p, t) => Losses.CategoricalCrossEntropy(p, t),
-               (p, t) => Metrics.Accuracy(p, t));
+            model.Compile(trainer, streamInfoToVariable);
 
             // Write model summary.
             Trace.WriteLine(model.Summary());

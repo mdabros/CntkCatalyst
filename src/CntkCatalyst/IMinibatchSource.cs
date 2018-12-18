@@ -9,8 +9,5 @@ namespace CntkCatalyst
             int minibatchSizeInSamples, DeviceDescriptor device);
 
         StreamInformation StreamInfo(string streamName);
-
-        string FeaturesName { get; }
-        string TargetsName { get; }
     }
 }
