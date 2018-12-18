@@ -59,13 +59,16 @@ var network = Layers.Input(inputShape, dataType)
     .Dense(10, weightInit(), biasInit, device, dataType)
     .Softmax();
 
-// Create the model.
-var model = new Sequential(network, dataType, device);
+// setup loss and metric.
+var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
+var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
 
-// Compile the network with the selected learner, loss and metric.
-model.Compile(p => Learners.RMSProp(p),
-    (p, t) => Losses.CategoricalCrossEntropy(p, t),
-    (p, t) => Metrics.Accuracy(p, t));
+// setup trainer.
+var learner = Learners.RMSProp(network.Parameters());
+var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
+
+// Create the model.
+var model = new Model(trainer, network, dataType, device);
 
 // Train the model using the training set.
 model.Fit(trainingSource, epochs: 5, batchSize: 128);
