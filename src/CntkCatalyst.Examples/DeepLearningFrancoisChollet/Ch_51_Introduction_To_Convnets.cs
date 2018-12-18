@@ -7,7 +7,7 @@ using CNTK;
 using CntkCatalyst.LayerFunctions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CntkCatalyst.Examples
+namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
 {
     /// <summary>
     /// Example from Chapter 5.1: Introduction to convnets:

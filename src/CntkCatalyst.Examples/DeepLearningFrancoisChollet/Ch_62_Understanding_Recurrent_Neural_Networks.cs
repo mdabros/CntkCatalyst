@@ -7,11 +7,11 @@ using CNTK;
 using CntkCatalyst.LayerFunctions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CntkCatalyst.Examples
+namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
 {
     /// <summary>
-    /// Example from Chapter 6.4: Sequence processing with convnets
-    /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/6.4-sequence-processing-with-convnets.ipynb
+    /// Example from Chapter 6.2: Understanding recurrent neural networks
+    /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/6.2-understanding-recurrent-neural-networks.ipynb
     ///
     /// This example needs manual download of the IMDB dataset in sparse CNTK format.
     /// The data can found following the link below, 
@@ -19,7 +19,7 @@ namespace CntkCatalyst.Examples
     /// https://msdn.microsoft.com/en-us/magazine/mt830362
     /// </summary>
     [TestClass]
-    public class Ch_64_Sequence_Processing_With_Convnets
+    public class Ch_62_Understanding_Recurrent_Neural_Networks
     {
         [TestMethod]
         public void Run()
@@ -43,19 +43,10 @@ namespace CntkCatalyst.Examples
             Func<CNTKDictionary> weightInit = () => Initializers.GlorotNormal(random.Next());
             var biasInit = Initializers.Zero();
 
-            //TODO: Fix for full network.
-
             // Create the architecture.
             var network = Layers.Input(inputShape, dataType, isSparse: true)
-                .Embedding(8, weightInit(), dataType, device)
-                //.Conv1D(7, 32, 1, weightInit(), biasInit, device, dataType)
-                //.ReLU()
-                //.MaxPool1D(5, 5)
-                //.Dense(32, weightInit(), biasInit, device, dataType)
-                //.ReLU()
-                //.Conv1D(7, 32, 1, weightInit(), biasInit, device, dataType)
-                //.ReLU()
-                //.GlobalMaxPooling1D()
+                .Embedding(32, weightInit(), dataType, device)
+                .LSTMStack(32, 1, weightInit(), false, device, dataType)
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
