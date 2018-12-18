@@ -71,24 +71,20 @@ namespace CntkCatalyst.Examples
             // Setup minibatch sources.
             // Network will be trained using the training set,
             // and tested using the test set.
-            var featuresName = "features";
-            var targetsName = "labels";
 
             // name to variable.
             var nameToVariable = new Dictionary<string, Variable>
             {
-                { featuresName, inputVariable },
-                { targetsName, targetVariable },
+                { "features", inputVariable },
+                { "labels", targetVariable },
             };
 
             // The order of the training data is randomize.
-            var train = CreateMinibatchSource(trainFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: true);
+            var train = CreateMinibatchSource(trainFilePath, nameToVariable, randomize: true);
             var trainingSource = new CntkMinibatchSource(train, nameToVariable);
 
             // Notice randomization is switched off for test data.
-            var test = CreateMinibatchSource(testFilePath, featuresName, targetsName,
-                numberOfClasses, inputShape, randomize: false);
+            var test = CreateMinibatchSource(testFilePath, nameToVariable, randomize: false);
             var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
@@ -101,18 +97,19 @@ namespace CntkCatalyst.Examples
             Trace.WriteLine($"Test set - Loss: {loss}, Metric: {metric}");
         }
 
-        MinibatchSource CreateMinibatchSource(string mapFilePath, string featuresName, string targetsName,
-            int numberOfClasses, int[] inputShape, bool randomize)
+        MinibatchSource CreateMinibatchSource(string mapFilePath, Dictionary<string, Variable> nameToVariable,
+            bool randomize)
         {
-            var inputSize = inputShape.Aggregate((d1, d2) => d1 * d2);
-            var streamConfigurations = new StreamConfiguration[]
+            var streamConfigurations = new List<StreamConfiguration>();
+            foreach (var kvp in nameToVariable)
             {
-                new StreamConfiguration(featuresName, inputSize),
-                new StreamConfiguration(targetsName, numberOfClasses)
-            };
-
+                var size = kvp.Value.Shape.Dimensions.Aggregate((d1, d2) => d1 * d2);
+                var name = kvp.Key;
+                streamConfigurations.Add(new StreamConfiguration(name, size));
+            }
+                        
             var minibatchSource = MinibatchSource.TextFormatMinibatchSource(
-                mapFilePath, 
+                mapFilePath,
                 streamConfigurations, 
                 MinibatchSource.InfinitelyRepeat, 
                 randomize);
