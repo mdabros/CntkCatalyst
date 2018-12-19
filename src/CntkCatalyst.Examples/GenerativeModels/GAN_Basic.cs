@@ -154,15 +154,6 @@ namespace CntkCatalyst.Examples.GenerativeModels
             app.Run(window);
         }
 
-        static Fitter CreateFitter(Function network, Function loss, DeviceDescriptor device)
-        {
-            var learner = Learners.Adam(network.Parameters(), learningRate: 0.00005);
-            var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
-            var fitter = new Fitter(trainer, device);
-
-            return fitter;
-        }
-
         Function Generator(Function input, Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
             DeviceDescriptor device, DataType dataType)
         {
@@ -205,6 +196,15 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 randomize);
 
             return new CntkMinibatchSource(minibatchSource, nameToVariable);
+        }
+
+        static Fitter CreateFitter(Function network, Function loss, DeviceDescriptor device)
+        {
+            var learner = Learners.Adam(network.Parameters(), learningRate: 0.00005);
+            var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
+            var fitter = new Fitter(trainer, device);
+
+            return fitter;
         }
 
         void DisposeValues(IDictionary<Variable, Value> minibatch)
