@@ -52,9 +52,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var discriminatorInputShape = NDShape.CreateNDShape(new int[] { 784 }); // 28 * 28 * 1.
             var discriminatorInput = Variable.InputVariable(discriminatorInputShape, dataType);
             // scale image input between -1.0 and 1.0.
-            var discriminatorInputScaled = discriminatorInput
-                .ElementTimes(Constant.Scalar(2 * 0.00390625f, device))
-                .Minus(Constant.Scalar(1.0f, device));
+            var discriminatorInputScaled = CNTKLib.Minus(
+                CNTKLib.ElementTimes(Constant.Scalar(2 * 0.00390625f, device), discriminatorInput),
+                Constant.Scalar(1.0f, device));
 
             var discriminatorNetwork = Discriminator(discriminatorInputScaled, weightInit, biasInit, device, dataType);
 
