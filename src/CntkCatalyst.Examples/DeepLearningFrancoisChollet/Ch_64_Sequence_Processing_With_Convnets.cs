@@ -7,11 +7,11 @@ using CNTK;
 using CntkCatalyst.LayerFunctions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CntkCatalyst.Examples
+namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
 {
     /// <summary>
-    /// Example from Chapter 6.1: Using word embeddings
-    /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/6.1-using-word-embeddings.ipynb
+    /// Example from Chapter 6.4: Sequence processing with convnets
+    /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/6.4-sequence-processing-with-convnets.ipynb
     ///
     /// This example needs manual download of the IMDB dataset in sparse CNTK format.
     /// The data can found following the link below, 
@@ -19,7 +19,7 @@ namespace CntkCatalyst.Examples
     /// https://msdn.microsoft.com/en-us/magazine/mt830362
     /// </summary>
     [TestClass]
-    public class Ch_61_Using_Word_Embeddings
+    public class Ch_64_Sequence_Processing_With_Convnets
     {
         [TestMethod]
         public void Run()
@@ -43,11 +43,19 @@ namespace CntkCatalyst.Examples
             Func<CNTKDictionary> weightInit = () => Initializers.GlorotNormal(random.Next());
             var biasInit = Initializers.Zero();
 
+            //TODO: Fix for full network.
+
             // Create the architecture.
             var network = Layers.Input(inputShape, dataType, isSparse: true)
                 .Embedding(8, weightInit(), dataType, device)
-                .Dense(32, weightInit(), biasInit, device, dataType)
-                .ReLU()
+                //.Conv1D(7, 32, 1, weightInit(), biasInit, device, dataType)
+                //.ReLU()
+                //.MaxPool1D(5, 5)
+                //.Dense(32, weightInit(), biasInit, device, dataType)
+                //.ReLU()
+                //.Conv1D(7, 32, 1, weightInit(), biasInit, device, dataType)
+                //.ReLU()
+                //.GlobalMaxPooling1D()
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 

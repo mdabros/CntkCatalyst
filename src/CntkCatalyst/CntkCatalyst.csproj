@@ -68,6 +68,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompositeMinibatchSource.cs" />
     <Compile Include="Predictor.cs" />
     <Compile Include="MetricEvaluator.cs" />
     <Compile Include="CntkMinibatchSource.cs" />

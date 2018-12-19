@@ -7,11 +7,12 @@ using CNTK;
 using CntkCatalyst.LayerFunctions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CntkCatalyst.Examples
+namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
 {
     /// <summary>
-    /// Example from Chapter 6.2: Understanding recurrent neural networks
-    /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/6.2-understanding-recurrent-neural-networks.ipynb
+    /// Example from Chapter 3.5: Classifying movie reviews:
+    /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/3.5-classifying-movie-reviews.ipynb
+    ///
     ///
     /// This example needs manual download of the IMDB dataset in sparse CNTK format.
     /// The data can found following the link below, 
@@ -19,7 +20,7 @@ namespace CntkCatalyst.Examples
     /// https://msdn.microsoft.com/en-us/magazine/mt830362
     /// </summary>
     [TestClass]
-    public class Ch_62_Understanding_Recurrent_Neural_Networks
+    public class Ch_35_Classifying_Movie_Reviews
     {
         [TestMethod]
         public void Run()
@@ -44,9 +45,12 @@ namespace CntkCatalyst.Examples
             var biasInit = Initializers.Zero();
 
             // Create the architecture.
+            //var input = CNTKLib.SequenceLast(Layers.Input(inputShape, dataType));
             var network = Layers.Input(inputShape, dataType, isSparse: true)
-                .Embedding(32, weightInit(), dataType, device)
-                .LSTMStack(32, 1, weightInit(), false, device, dataType)
+                .Dense(16, weightInit(), biasInit, device, dataType)
+                .ReLU()
+                .Dense(16, weightInit(), biasInit, device, dataType)
+                .ReLU()
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
                 .Softmax();
 
@@ -60,10 +64,10 @@ namespace CntkCatalyst.Examples
                 dynamicAxes: new List<Axis>() { Axis.DefaultBatchAxis() },
                 isSparse: false);
 
-            // setup loss and learner.
+            // setup loss and metric.
             var lossFunc = Losses.CategoricalCrossEntropy(network.Output, targetVariable);
             var metricFunc = Metrics.Accuracy(network.Output, targetVariable);
-
+            
             // setup trainer.
             var learner = Learners.Adam(network.Parameters());
             var trainer = Trainer.CreateTrainer(network, lossFunc, metricFunc, new List<Learner> { learner });
@@ -98,7 +102,7 @@ namespace CntkCatalyst.Examples
             var testSource = new CntkMinibatchSource(test, nameToVariable);
 
             // Train the model using the training set.
-            var history = model.Fit(trainingSource, epochs: 100, batchSize: 512,
+            var history = model.Fit(trainingSource, epochs: 20, batchSize: 512,
                 validationMinibatchSource: testSource);
 
             // Trace loss and validation history
