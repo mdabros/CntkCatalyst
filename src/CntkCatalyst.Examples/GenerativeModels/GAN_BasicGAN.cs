@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace CntkCatalyst.Examples.GenerativeModels
 {
     /// <summary>
-    /// Example based:
+    /// Example based on:
     /// https://cntk.ai/pythondocs/CNTK_206A_Basic_GAN.html
     /// 
     /// Training follows the original paper relatively closely:
