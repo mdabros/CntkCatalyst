@@ -12,6 +12,11 @@ namespace CntkCatalyst.LayerFunctions
             return CNTKLib.ReLU(input);
         }
 
+        public static Function LeakyReLU(this Function input, double alpha)
+        {
+            return CNTKLib.LeakyReLU(input, alpha);
+        }
+
         public static Function Sigmoid(this Function input)
         {
             return CNTKLib.Sigmoid(input);
