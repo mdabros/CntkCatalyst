@@ -32,6 +32,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 var sampleShape = variable.Shape;
                 var totalElementCount = minibatchSizeInSamples * sampleShape.Dimensions.Aggregate((d1, d2) => d1 * d2);
 
+                // Consider reusing sample arrays, to avoid load on GC.
                 var samples = Enumerable.Range(0, totalElementCount)
                     .Select(v => SampleRandomUniform())
                     .ToArray();
