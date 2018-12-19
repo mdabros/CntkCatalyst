@@ -92,7 +92,7 @@
     <Compile Include="DeepLearningFrancoisChollet\Ch_35_Classifying_Movie_Reviews.cs" />
     <Compile Include="DeepLearningFrancoisChollet\Ch_52_Using_Convnets_With_Small_Datasets.cs" />
     <Compile Include="GenerativeModels\GAN_BasicGAN.cs" />
-    <Compile Include="GenerativeModels\UniformNoiseMinibatchSource.cs" />
+    <Compile Include="UniformNoiseMinibatchSource.cs" />
     <Compile Include="ImageUtilities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

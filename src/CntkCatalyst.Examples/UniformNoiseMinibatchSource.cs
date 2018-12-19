@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CNTK;
 
-namespace CntkCatalyst.Examples.GenerativeModels
+namespace CntkCatalyst.Examples
 {
     public class UniformNoiseMinibatchSource : IMinibatchSource
     {
