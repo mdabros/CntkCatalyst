@@ -21,7 +21,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
     /// https://github.com/Microsoft/CNTK/tree/master/Examples/Image/DataSets/MNIST
     /// </summary>
     [TestClass]
-    public class GAN_Basic
+    public class GAN_BasicGAN
     {
         [TestMethod]
         public void Run()
