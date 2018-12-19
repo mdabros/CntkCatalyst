@@ -131,10 +131,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
                     discriminatorFitter.ResetLossAndMetricAccumulators();
 
                     var traceOutput = $"Epoch: {epoch + 1:000} Generator Loss = {generatorCurrentLoss:F8}, Discriminator Loss = {discriminatorCurrentLoss:F8}";
+                    Trace.WriteLine(traceOutput);
 
                     ++epoch;
-
-                    Trace.WriteLine(traceOutput);
                 }
             }
 
