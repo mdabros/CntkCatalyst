@@ -145,6 +145,25 @@ namespace CntkCatalyst.Examples.GenerativeModels
                     Trace.WriteLine(traceOutput);
                 }
             }
+
+            // Sample images from generator.
+            var predictor = new Predictor(generatorNetwork, device);
+            var generatorNoiseExampleBatchValue = GANUtilities.CreateNoiseSamplesValue(
+                random, 1, ganeratorInputShape, device);
+
+            var generatorExampleInput = new Dictionary<Variable, Value>
+            {
+                { generatorInput,  generatorNoiseExampleBatchValue}
+            };
+
+            var image = predictor.PredictNextStep(generatorExampleInput);
+            var imageData = image.SelectMany(t => t).ToArray();
+
+            // Show examples
+            var app = new System.Windows.Application();
+            var window = new PlotWindowBitMap("Generated Image", imageData, 28, 28, 1, true);
+            window.Show();
+            app.Run(window);
         }
 
         static Fitter CreateFitter(Function network, Function loss, DeviceDescriptor device)
