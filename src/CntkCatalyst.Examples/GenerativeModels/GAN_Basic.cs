@@ -200,7 +200,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
         static Fitter CreateFitter(Function network, Function loss, DeviceDescriptor device)
         {
-            var learner = Learners.Adam(network.Parameters(), learningRate: 0.00005);
+            var learner = Learners.MomentumSGD(network.Parameters(), learningRate: 0.00005, momentum: 0.9);
             var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
             var fitter = new Fitter(trainer, device);
 
