@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Windows;
 using CNTK;
 using CntkCatalyst.LayerFunctions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -140,14 +141,14 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Sample 6x6 images from generator.
             var samples = 6 * 6;
             var batch = noiseMinibatchSource.GetNextMinibatch(samples, device);
-            var examples = batch.minibatch;
+            var noise = batch.minibatch;
 
             var predictor = new Predictor(generatorNetwork, device);
-            var images = predictor.PredictNextStep(examples);
+            var images = predictor.PredictNextStep(noise);
             var imagesData = images.SelectMany(t => t).ToArray();
 
             // Show examples
-            var app = new System.Windows.Application();
+            var app = new Application();
             var window = new PlotWindowBitMap("Generated Images", imagesData, 28, 28, 1, true);
             window.Show();
             app.Run(window);
