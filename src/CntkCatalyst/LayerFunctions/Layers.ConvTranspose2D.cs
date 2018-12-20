@@ -22,8 +22,8 @@ namespace CntkCatalyst.LayerFunctions
             {
                 filterShape.Item1,
                 filterShape.Item2,
-                NDShape.InferredDimension, // Infer number of channels in input.
-                filterCount
+                filterCount,
+                NDShape.InferredDimension // Infer number of channels in input.
             };
 
             var filterStrides = new int[]
