@@ -14,6 +14,7 @@ namespace CntkCatalyst.LayerFunctions
             int filterCount,
             ValueTuple<int, int> strideShape,
             Padding padding,
+            ValueTuple<int, int> outputShape,
             CNTKDictionary weightInitializer,
             CNTKDictionary biasInitializer,
             DeviceDescriptor device,
@@ -33,6 +34,13 @@ namespace CntkCatalyst.LayerFunctions
                 strideShape.Item2,
             };
 
+            var outputSizes = new int[]
+            {
+                outputShape.Item1,
+                outputShape.Item2,
+                filterCount,
+            };
+
             var weights = new Parameter(NDShape.CreateNDShape(filterSizes), dataType,
                    weightInitializer, device);
 
@@ -43,8 +51,9 @@ namespace CntkCatalyst.LayerFunctions
             // Padding dimensions follows stride dimensions. 1D, 2D, 3D, etc.
             var usePadding = padding.ToBoolean();
             var autoPadding = CntkUtilities.CreateFilledBoolVector(filterStrides.Length, usePadding);
+            autoPadding.Add(false); // auto-padding must be false for the channel dimension.
 
-            var result = CNTKLib.ConvolutionTranspose(weights, input, filterStrides, sharing, autoPadding);
+            var result = CNTKLib.ConvolutionTranspose(weights, input, filterStrides, sharing, autoPadding, NDShape.CreateNDShape(outputSizes));
 
             if (biasInitializer != null)
             {

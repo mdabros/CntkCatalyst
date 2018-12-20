@@ -163,17 +163,19 @@ namespace CntkCatalyst.Examples.GenerativeModels
                  .BatchNormalization(false, device, dataType)
                  .ReLU()
 
-                 .Dense(64 * 2 * 7 * 7, weightInit(), biasInit, device, dataType)
+                 .Dense(7 * 7 * 128, weightInit(), biasInit, device, dataType)
                  .BatchNormalization(false, device, dataType)
                  .ReLU()
-                 .Reshape(NDShape.CreateNDShape(new int[] { 128, 7, 7 }))
+                 .Reshape(NDShape.CreateNDShape(new int[] { 7, 7, 128 }))
 
-                 .ConvTranspose2D((5, 5), 128, (2, 2), Padding.Zeros, weightInit(), biasInit, device, dataType)
+                 .ConvTranspose2D((5, 5), 128, (2, 2), Padding.Zeros, (14, 14), weightInit(), biasInit, device, dataType)
                  .BatchNormalization(true, device, dataType)
                  .ReLU()
 
-                 .ConvTranspose2D((5, 5), 1, (2, 2), Padding.Zeros, weightInit(), biasInit, device, dataType)
+                 .ConvTranspose2D((5, 5), 1, (2, 2), Padding.Zeros, (28, 28), weightInit(), biasInit, device, dataType)
                  .Tanh();
+
+            Trace.Write(Model.Summary(generatorNetwork));
 
             return generatorNetwork.Reshape(NDShape.CreateNDShape(new int[] { 784 }));
         }
