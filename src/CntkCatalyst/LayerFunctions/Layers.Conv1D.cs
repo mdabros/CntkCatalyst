@@ -12,6 +12,7 @@ namespace CntkCatalyst.LayerFunctions
             int filterShape,
             int filterCount,
             int strideShape,
+            Padding padding,
             CNTKDictionary weightInitializer,
             CNTKDictionary biasInitializer,
             DeviceDescriptor device,
@@ -20,6 +21,7 @@ namespace CntkCatalyst.LayerFunctions
 
             int[] filterSizes;
             BoolVector autoPadding;
+            var usePadding = padding.ToBoolean();
 
             var inputShape = input.Output.Shape;
             if (inputShape.Rank > 1)
@@ -32,7 +34,7 @@ namespace CntkCatalyst.LayerFunctions
                     filterCount
                 };
 
-                autoPadding = CntkUtils.CreateFilledBoolVector(filterSizes.Length, false);
+                autoPadding = CntkUtilities.CreateFilledBoolVector(filterSizes.Length, usePadding);
             }
             else
             {
@@ -42,11 +44,11 @@ namespace CntkCatalyst.LayerFunctions
                     filterCount
                 };
 
-                autoPadding = CntkUtils.CreateFilledBoolVector(1, false);
+                autoPadding = CntkUtilities.CreateFilledBoolVector(1, usePadding);
             }
 
             var filterStrides = new int[] { strideShape };
-            var sharing = CntkUtils.CreateFilledBoolVector(filterStrides.Length, true);
+            var sharing = CntkUtilities.CreateFilledBoolVector(filterStrides.Length, true);
             var dilation = new int[] { 1 };
 
             var weights = new Parameter(NDShape.CreateNDShape(filterSizes), dataType,

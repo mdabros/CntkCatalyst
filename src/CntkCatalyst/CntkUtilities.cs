@@ -6,7 +6,7 @@ namespace CntkCatalyst
     /// <summary>
     /// 
     /// </summary>
-    public static class CntkUtils
+    public static class CntkUtilities
     {
         internal static ParameterVector CreateParameterVector(IList<Parameter> input)
         {

@@ -48,15 +48,15 @@ namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
             var scaledInput = CNTKLib.ElementTimes(Constant.Scalar(0.00390625f, device), input);
 
             var network = scaledInput
-                .Conv2D((3, 3), 32, (1, 1), weightInit(), biasInit, device, dataType)
+                .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
                 .MaxPool2D((2, 2), (2, 2))
 
-                .Conv2D((3, 3), 32, (1, 1), weightInit(), biasInit, device, dataType)
+                .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
                 .MaxPool2D((2, 2), (2, 2))
 
-                .Conv2D((3, 3), 32, (1, 1), weightInit(), biasInit, device, dataType)
+                .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
                 
                 .Dense(64, weightInit(), biasInit, device, dataType)

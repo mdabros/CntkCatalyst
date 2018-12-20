@@ -70,10 +70,11 @@
   <ItemGroup>
     <Compile Include="CompositeMinibatchSource.cs" />
     <Compile Include="LayerFunctions\Layers.ConvTranspose2D.cs" />
+    <Compile Include="LayerFunctions\Padding.cs" />
     <Compile Include="Predictor.cs" />
     <Compile Include="MetricEvaluator.cs" />
     <Compile Include="CntkMinibatchSource.cs" />
-    <Compile Include="CntkUtils.cs" />
+    <Compile Include="CntkUtilities.cs" />
     <Compile Include="Fitter.cs" />
     <Compile Include="IMinibatchSource.cs" />
     <Compile Include="Initializers.cs" />

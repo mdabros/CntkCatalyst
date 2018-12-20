@@ -168,11 +168,11 @@ namespace CntkCatalyst.Examples.GenerativeModels
                  .ReLU()
                  .Reshape(NDShape.CreateNDShape(new int[] { 128, 7, 7 }))
 
-                 .ConvTranspose2D((5, 5), 128, (2, 2), weightInit(), biasInit, device, dataType)
+                 .ConvTranspose2D((5, 5), 128, (2, 2), Padding.Zeros, weightInit(), biasInit, device, dataType)
                  .BatchNormalization(true, device, dataType)
                  .ReLU()
 
-                 .ConvTranspose2D((5, 5), 1, (2, 2), weightInit(), biasInit, device, dataType)
+                 .ConvTranspose2D((5, 5), 1, (2, 2), Padding.Zeros, weightInit(), biasInit, device, dataType)
                  .Tanh();
 
             return generatorNetwork.Reshape(NDShape.CreateNDShape(new int[] { 784 }));
@@ -184,11 +184,11 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var discriminatorNetwork = input
                  .Reshape(NDShape.CreateNDShape(new int[] { 28, 28, 1 }))
 
-                 .Conv2D((5, 5), 1, (2, 2), weightInit(), biasInit, device, dataType)
+                 .Conv2D((5, 5), 1, (2, 2), Padding.None, weightInit(), biasInit, device, dataType)
                  .BatchNormalization(true, device, dataType)
                  .LeakyReLU(0.2)
 
-                 .Conv2D((5, 5), 64, (2, 2), weightInit(), biasInit, device, dataType)
+                 .Conv2D((5, 5), 64, (2, 2), Padding.None, weightInit(), biasInit, device, dataType)
                  .BatchNormalization(true, device, dataType)
                  .LeakyReLU(0.2)
 

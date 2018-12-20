@@ -13,6 +13,7 @@ namespace CntkCatalyst.LayerFunctions
             ValueTuple<int, int> filterShape,
             int filterCount,
             ValueTuple<int, int> strideShape,
+            Padding padding,
             CNTKDictionary weightInitializer,
             CNTKDictionary biasInitializer,
             DeviceDescriptor device,
@@ -35,7 +36,15 @@ namespace CntkCatalyst.LayerFunctions
             var weights = new Parameter(NDShape.CreateNDShape(filterSizes), dataType,
                    weightInitializer, device);
 
-            var result = CNTKLib.ConvolutionTranspose(weights, input, filterStrides);
+            // Currently, only sharing=true is supported by CNTK. So these are hardcoded.
+            // sharing dimensions follows stride dimensions. 1D, 2D, 3D, etc.
+            var sharing = CntkUtilities.CreateFilledBoolVector(filterStrides.Length, true);
+
+            // Padding dimensions follows stride dimensions. 1D, 2D, 3D, etc.
+            var usePadding = padding.ToBoolean();
+            var autoPadding = CntkUtilities.CreateFilledBoolVector(filterStrides.Length, usePadding);
+
+            var result = CNTKLib.ConvolutionTranspose(weights, input, filterStrides, sharing, autoPadding);
 
             if (biasInitializer != null)
             {
