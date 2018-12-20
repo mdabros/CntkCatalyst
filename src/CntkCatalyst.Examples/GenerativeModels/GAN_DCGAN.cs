@@ -38,7 +38,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             // Setup initializers
             var random = new Random(232);
-            Func<CNTKDictionary> weightInit = () => Initializers.Xavier(random.Next());
+            Func<CNTKDictionary> weightInit = () => Initializers.Xavier(random.Next(), scale: 0.02);
             var biasInit = Initializers.Zero();
 
             // Ensure reproducible results with CNTK.
