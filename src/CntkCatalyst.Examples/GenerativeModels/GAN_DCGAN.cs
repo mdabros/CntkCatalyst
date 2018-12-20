@@ -201,6 +201,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
                  .Dense(1, weightInit(), biasInit, device, dataType)
                  .Sigmoid();
 
+            Trace.Write(Model.Summary(discriminatorNetwork));
+
             return discriminatorNetwork;
         }
 
