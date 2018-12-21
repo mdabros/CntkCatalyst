@@ -11,11 +11,13 @@ namespace CntkCatalyst.LayerFunctions
         public static Function MaxPool2D(this Function input,
             ValueTuple<int, int> poolShape,
             ValueTuple<int, int> strideShape,
-            bool padding = false) 
+            Padding padding) 
         {
+            var usePadding = padding.ToBoolean();
+
             var poolSizes = new int[] { poolShape.Item1, poolShape.Item2 };
             var strideSizes = new int[] { strideShape.Item1, strideShape.Item2 };
-            var paddingSizes = new bool[] { padding, padding };
+            var paddingSizes = new bool[] { usePadding, usePadding };
 
             return CNTKLib.Pooling(input,
                 PoolingType.Max,

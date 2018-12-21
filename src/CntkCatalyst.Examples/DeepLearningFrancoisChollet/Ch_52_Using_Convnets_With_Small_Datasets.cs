@@ -45,19 +45,19 @@ namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
             var network = Layers.Input(inputShape, dataType)
                 .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
-                .MaxPool2D((2, 2), (2, 2))
+                .MaxPool2D((2, 2), (2, 2), Padding.None)
 
                 .Conv2D((3, 3), 64, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
-                .MaxPool2D((2, 2), (2, 2))
+                .MaxPool2D((2, 2), (2, 2), Padding.None)
 
                 .Conv2D((3, 3), 128, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
-                .MaxPool2D((2, 2), (2, 2))
+                .MaxPool2D((2, 2), (2, 2), Padding.None)
 
                 .Conv2D((3, 3), 128, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
-                .MaxPool2D((2, 2), (2, 2))
+                .MaxPool2D((2, 2), (2, 2), Padding.None)
 
                 .Dense(512, weightInit(), biasInit, device, dataType)
                 .ReLU()
