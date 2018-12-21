@@ -22,6 +22,11 @@ namespace CntkCatalyst
             return null;
         }
 
+        public static CNTKDictionary Bilinear(int kernelWidth, int kernelHeight)
+        {
+            return CNTKLib.BilinearInitializer((uint)kernelWidth, (uint)kernelHeight);
+        }
+
         public static CNTKDictionary Uniform(int seed)
         {
             return CNTKLib.UniformInitializer(CNTKLib.DefaultParamInitScale, (uint)seed);
