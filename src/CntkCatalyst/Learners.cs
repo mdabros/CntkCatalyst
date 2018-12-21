@@ -16,11 +16,15 @@ namespace CntkCatalyst
         /// <param name="learningRate">Learning rate. (Default is 0.001)</param>
         /// <param name="l1Regularization">L1 regularization term. (Default is 0, so no regularization)</param>
         /// <param name="l2Regularization">L2 regularization term. (Default is 0, so no regularization)</param>
+        /// <param name="gradientClippingThresholdPerSample">clipping threshold per sample, defaults to infinity. (Default is infinity, so no clipping)</param>
+        /// <param name="gradientClippingWithTruncation">clipping threshold per sample, defaults to infinity. (Default is true)</param>
         /// <returns></returns>
         public static Learner SGD(IList<Parameter> parameters,
             double learningRate = 0.01,
             double l1Regularization = 0.0,
-            double l2Regularization = 0.0)
+            double l2Regularization = 0.0,
+            double gradientClippingThresholdPerSample = double.PositiveInfinity,
+            bool gradientClippingWithTruncation = true)
         {
             if (parameters == null) { throw new ArgumentNullException("parameters"); }
             if (learningRate < 0.0) { throw new ArgumentException(nameof(learningRate) + " Has to be larger or equal to 0"); }
@@ -29,7 +33,10 @@ namespace CntkCatalyst
 
             var learningRatePerSample = new TrainingParameterScheduleDouble(learningRate, 1);
 
-            var options = SetAdditionalOptions(l1Regularization, l2Regularization);
+            var options = SetAdditionalOptions(l1Regularization,
+                l2Regularization,
+                gradientClippingThresholdPerSample,
+                gradientClippingWithTruncation);
 
             return CNTKLib.SGDLearner(CntkUtilities.CreateParameterVector(parameters),
                 learningRatePerSample, options);
@@ -43,18 +50,25 @@ namespace CntkCatalyst
         /// <param name="momentum">Momentum (default is 0.9).</param>
         /// <param name="l1Regularization">L1 regularization term. (Default is 0, so no regularization)</param>
         /// <param name="l2Regularization">L2 regularization term. (Default is 0, so no regularization)</param>
+        /// <param name="gradientClippingThresholdPerSample">clipping threshold per sample, defaults to infinity. (Default is infinity, so no clipping)</param>
+        /// <param name="gradientClippingWithTruncation">clipping threshold per sample, defaults to infinity. (Default is true)</param>
         /// <param name="unitGain"></param>
         /// <returns></returns>
         public static Learner MomentumSGD(IList<Parameter> parameters, 
             double learningRate = 0.01, double momentum = 0.1,
             double l1Regularization = 0.0,
             double l2Regularization = 0.0,
+            double gradientClippingThresholdPerSample = double.PositiveInfinity,
+            bool gradientClippingWithTruncation = true,
             bool unitGain = true)
         {
             var learningRatePerSample = new TrainingParameterScheduleDouble(learningRate, 1);
             var momentumPerSample = new TrainingParameterScheduleDouble(momentum, 1);
 
-            var options = SetAdditionalOptions(l1Regularization, l2Regularization);
+            var options = SetAdditionalOptions(l1Regularization,
+                l2Regularization,
+                gradientClippingThresholdPerSample,
+                gradientClippingWithTruncation);
 
             return CNTKLib.MomentumSGDLearner(CntkUtilities.CreateParameterVector(parameters), 
                 learningRatePerSample, momentumPerSample, unitGain,
@@ -76,6 +90,8 @@ namespace CntkCatalyst
         /// Note that this is the beta2 parameter in the Adam paper.</param>
         /// <param name="l1Regularization">L1 regularization term. (Default is 0, so no regularization)</param>
         /// <param name="l2Regularization">L2 regularization term. (Default is 0, so no regularization)</param>
+        /// <param name="gradientClippingThresholdPerSample">clipping threshold per sample, defaults to infinity. (Default is infinity, so no clipping)</param>
+        /// <param name="gradientClippingWithTruncation">clipping threshold per sample, defaults to infinity. (Default is true)</param>
         /// <param name="unitGain"></param>
         /// <param name="epsilon"></param>
         /// <returns></returns>
@@ -83,15 +99,19 @@ namespace CntkCatalyst
             double momentum = 0.9, double varianceMomentum = 0.999,              
             double l1Regularization = 0.0,
             double l2Regularization = 0.0,
-            bool unitGain = true, double epsilon = 1e-08f)
+            double gradientClippingThresholdPerSample = double.PositiveInfinity,
+            bool gradientClippingWithTruncation = true,
+            bool unitGain = true, 
+            double epsilon = 1e-08f)
         {
             var learningRatePerSample = new TrainingParameterScheduleDouble(learningRate, 1);
             var momentumRate = new TrainingParameterScheduleDouble(momentum, 1);
             var varianceMomentumRate = new TrainingParameterScheduleDouble(varianceMomentum, 1);
 
-            var options = SetAdditionalOptions(l1Regularization, l2Regularization);
-
-            // Consider: gradientClippingWithTruncation and gradientClippingThresholdPerSample
+            var options = SetAdditionalOptions(l1Regularization,
+                l2Regularization,
+                gradientClippingThresholdPerSample,
+                gradientClippingWithTruncation);
 
             return CNTKLib.AdamLearner(CntkUtilities.CreateParameterVector(parameters),
                 learningRatePerSample,
@@ -116,6 +136,8 @@ namespace CntkCatalyst
         /// <param name="min">Minimum scale allowed for the initial learning_rate. Should be greater than zero</param>
         /// <param name="l1Regularization">L1 regularization term. (Default is 0, so no regularization)</param>
         /// <param name="l2Regularization">L2 regularization term. (Default is 0, so no regularization)</param>
+        /// <param name="gradientClippingThresholdPerSample">clipping threshold per sample, defaults to infinity. (Default is infinity, so no clipping)</param>
+        /// <param name="gradientClippingWithTruncation">clipping threshold per sample, defaults to infinity. (Default is true)</param>
         /// <param name="needAveMultiplier"></param>
         /// <returns></returns>
         public static Learner RMSProp(IList<Parameter> parameters,
@@ -127,10 +149,16 @@ namespace CntkCatalyst
             double min = 0.5,
             double l1Regularization = 0.0,
             double l2Regularization = 0.0,
+            double gradientClippingThresholdPerSample = double.PositiveInfinity,
+            bool gradientClippingWithTruncation = true,
             bool needAveMultiplier = true)
         {
             var learningRatePerSample = new TrainingParameterScheduleDouble(learningRate, 1);
-            var options = SetAdditionalOptions(l1Regularization, l2Regularization);
+
+            var options = SetAdditionalOptions(l1Regularization, 
+                l2Regularization,
+                gradientClippingThresholdPerSample,
+                gradientClippingWithTruncation);
 
             return CNTKLib.RMSPropLearner(CntkUtilities.CreateParameterVector(parameters),
                 learningRatePerSample,
@@ -138,11 +166,16 @@ namespace CntkCatalyst
                 needAveMultiplier, options);
         }
 
-        public static AdditionalLearningOptions SetAdditionalOptions(double l1Regularization, double l2Regularization)
+        public static AdditionalLearningOptions SetAdditionalOptions(double l1Regularization, 
+            double l2Regularization,
+            double gradientClippingThresholdPerSample,
+            bool gradientClippingWithTruncation)
         {
             var options = new AdditionalLearningOptions();
             options.l1RegularizationWeight = l1Regularization;
             options.l2RegularizationWeight = l2Regularization;
+            options.gradientClippingThresholdPerSample = gradientClippingThresholdPerSample;
+            options.gradientClippingWithTruncation = gradientClippingWithTruncation;
             return options;
         }
     }
