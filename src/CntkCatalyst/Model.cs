@@ -143,14 +143,21 @@ namespace CntkCatalyst
         /// <summary>
         /// Currently will only list all layers with empty name.
         /// </summary>
-        /// <returns></returns>
         public string Summary()
+        {
+            return Summary(Network);
+        }
+
+        /// <summary>
+        /// Currently will only list all layers with empty name.
+        /// </summary>
+        public static string Summary(Function network)
         {
             var sb = new StringBuilder();
             sb.AppendLine("---------------------");
             sb.AppendLine("Model Summary");
-            sb.AppendLine("Input Shape= " + Network.Arguments[0].Shape.AsString());
-            sb.AppendLine("Output Shape= " + Network.Output.Shape.AsString());
+            sb.AppendLine("Input Shape= " + network.Arguments[0].Shape.AsString());
+            sb.AppendLine("Output Shape= " + network.Output.Shape.AsString());
             sb.AppendLine("=====================");
             sb.AppendLine("");
 
@@ -158,11 +165,11 @@ namespace CntkCatalyst
 
             // Finds all layers with empty name.
             // TODO: Figure out of to list all layers regardless of name.
-            var layers = Network.FindAllWithName(string.Empty)
+            var layers = network.FindAllWithName(string.Empty)
                 .Reverse().ToList();
 
             foreach (var layer in layers)
-            {                
+            {
                 var outputShape = layer.Output.Shape;
                 var layerParameterCount = 0;
 
@@ -171,7 +178,7 @@ namespace CntkCatalyst
                     layerParameterCount = layer.Parameters().First().Shape.TotalSize;
                 }
 
-                sb.AppendLine($"Layer Name='{layer.Name}' Output Shape={outputShape.AsString(),-30}" + 
+                sb.AppendLine($"Layer Name='{layer.Name}' Output Shape={outputShape.AsString(),-30}" +
                     $" Param #:{layerParameterCount}");
 
                 totalParameterCount += layerParameterCount;

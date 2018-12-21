@@ -12,6 +12,7 @@ namespace CntkCatalyst.Examples
         readonly Random m_random;
 
         readonly IDictionary<string, Variable> m_nameToVariable;
+        readonly IDictionary<string, float[]> m_nameToData;
 
         public UniformNoiseMinibatchSource(IDictionary<string, Variable> nameToVariable, float min, float max, int seed)
         {
@@ -20,6 +21,9 @@ namespace CntkCatalyst.Examples
             m_min = min;
             m_max = max;
             m_random = new Random(seed);
+
+            // Initialize data dictionary.
+            m_nameToData = m_nameToVariable.ToDictionary(v => v.Key, v => new float[0]);
         }
 
         public (IDictionary<Variable, Value> minibatch, bool isSweepEnd) GetNextMinibatch(int minibatchSizeInSamples, 
@@ -28,16 +32,24 @@ namespace CntkCatalyst.Examples
             var minibatch = new Dictionary<Variable, Value>();
             foreach (var kvp in m_nameToVariable)
             {
+                var name = kvp.Key;
                 var variable = kvp.Value;
                 var sampleShape = variable.Shape;
                 var totalElementCount = minibatchSizeInSamples * sampleShape.Dimensions.Aggregate((d1, d2) => d1 * d2);
 
-                // Consider reusing sample arrays, to avoid load on GC.
-                var samples = Enumerable.Range(0, totalElementCount)
-                    .Select(v => SampleRandomUniform())
-                    .ToArray();
+                var data = m_nameToData[name];
+                if(data.Length != totalElementCount)
+                {
+                    Array.Resize(ref data, totalElementCount);
+                    m_nameToData[name] = data;
+                }
+
+                for (int i = 0; i < data.Length; i++)
+                {
+                    data[i] = SampleRandomUniform();
+                }
                 
-                var value = Value.CreateBatch<float>(sampleShape, samples, device);
+                var value = Value.CreateBatch<float>(sampleShape, data, device);
                 minibatch.Add(variable, value);
             }
 

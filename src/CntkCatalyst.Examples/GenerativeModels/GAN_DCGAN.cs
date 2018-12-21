@@ -12,17 +12,18 @@ namespace CntkCatalyst.Examples.GenerativeModels
 {
     /// <summary>
     /// Example based on:
-    /// https://cntk.ai/pythondocs/CNTK_206A_Basic_GAN.html
+    /// https://cntk.ai/pythondocs/CNTK_206B_DCGAN.html
     /// 
     /// Training follows the original paper relatively closely:
-    /// https://arxiv.org/pdf/1406.2661v1.pdf
+    /// Original GAN paper: https://arxiv.org/pdf/1406.2661v1.pdf
+    /// DCGAN paper: https://arxiv.org/pdf/1511.06434.pdf
     /// 
     /// This example needs manual download of the MNIST dataset in CNTK format.
     /// Instruction on how to download and convert the dataset can be found here:
     /// https://github.com/Microsoft/CNTK/tree/master/Examples/Image/DataSets/MNIST
     /// </summary>
     [TestClass]
-    public class GAN_BasicGAN
+    public class GAN_DCGAN
     {
         [TestMethod]
         public void Run()
@@ -37,7 +38,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             // Setup initializers
             var random = new Random(232);
-            Func<CNTKDictionary> weightInit = () => Initializers.Xavier(random.Next());
+            Func<CNTKDictionary> weightInit = () => Initializers.Xavier(random.Next(), scale: 0.02);
             var biasInit = Initializers.Zero();
 
             // Ensure reproducible results with CNTK.
@@ -92,11 +93,11 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Create fitters for the training loop.
             // Generator uses Adam and discriminator SGD. 
             // Advice from: https://github.com/soumith/ganhacks
-            var generatorLearner = Learners.Adam(generatorNetwork.Parameters(),
+            var generatorLearner = Learners.Adam(generatorNetwork.Parameters(), 
                 learningRate: 0.0002, momentum: 0.5, gradientClippingThresholdPerSample: 1.0);
             var generatorFitter = CreateFitter(generatorLearner, generatorNetwork, generatorLossFunc, device);
 
-            var discriminatorLearner = Learners.SGD(discriminatorNetwork.Parameters(),
+            var discriminatorLearner = Learners.SGD(discriminatorNetwork.Parameters(), 
                 learningRate: 0.0002, gradientClippingThresholdPerSample: 1.0);
             var discriminatorFitter = CreateFitter(discriminatorLearner, discriminatorNetwork, discriminatorLossFunc, device);
 
@@ -164,22 +165,49 @@ namespace CntkCatalyst.Examples.GenerativeModels
             DeviceDescriptor device, DataType dataType)
         {
             var generatorNetwork = input
-                 .Dense(128, weightInit(), biasInit, device, dataType)
+                 .Dense(1024, weightInit(), biasInit, device, dataType)
+                 .BatchNorm(BatchNorm.Regular, device, dataType)
                  .ReLU()
-                 .Dense(784, weightInit(), biasInit, device, dataType) // output corresponds to input shape: 28 * 28 = 784.
+
+                 .Dense(7 * 7 * 128, weightInit(), biasInit, device, dataType)
+                 .BatchNorm(BatchNorm.Regular, device, dataType)
+                 .ReLU()
+                 .Reshape(NDShape.CreateNDShape(new int[] { 7, 7, 128 }))
+
+                 .ConvTranspose2D((5, 5), 128, (2, 2), Padding.Zeros, (14, 14), weightInit(), biasInit, device, dataType)
+                 .BatchNorm(BatchNorm.Spatial, device, dataType)
+                 .ReLU()
+
+                 .ConvTranspose2D((5, 5), 1, (2, 2), Padding.Zeros, (28, 28), weightInit(), biasInit, device, dataType)
                  .Tanh();
 
-            return generatorNetwork;
+            Trace.Write(Model.Summary(generatorNetwork));
+
+            return generatorNetwork.Reshape(NDShape.CreateNDShape(new int[] { 784 }));
         }
 
         Function Discriminator(Function input, Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
             DeviceDescriptor device, DataType dataType)
         {
             var discriminatorNetwork = input
-                 .Dense(128, weightInit(), biasInit, device, dataType)
-                 .ReLU()
+                 .Reshape(NDShape.CreateNDShape(new int[] { 28, 28, 1 }))
+
+                 .Conv2D((5, 5), 1, (2, 2), Padding.None, weightInit(), biasInit, device, dataType)
+                 .BatchNorm(BatchNorm.Spatial, device, dataType)
+                 .LeakyReLU(0.2)
+
+                 .Conv2D((5, 5), 64, (2, 2), Padding.None, weightInit(), biasInit, device, dataType)
+                 .BatchNorm(BatchNorm.Spatial, device, dataType)
+                 .LeakyReLU(0.2)
+
+                 .Dense(1024, weightInit(), biasInit, device, dataType)
+                 .BatchNorm(BatchNorm.Regular, device, dataType)
+                 .LeakyReLU(0.2)
+
                  .Dense(1, weightInit(), biasInit, device, dataType)
                  .Sigmoid();
+
+            Trace.Write(Model.Summary(discriminatorNetwork));
 
             return discriminatorNetwork;
         }
@@ -205,7 +233,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
         }
 
         static Fitter CreateFitter(Learner learner, Function network, Function loss, DeviceDescriptor device)
-        {
+        {            
             var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
             var fitter = new Fitter(trainer, device);
 

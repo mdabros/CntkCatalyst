@@ -11,5 +11,10 @@ namespace CntkCatalyst.LayerFunctions
         {
             return CNTKLib.Flatten(input);
         }
+
+        public static Function Reshape(this Function input, NDShape shape)
+        {
+            return CNTKLib.Reshape(input, shape);
+        }
     }
 }

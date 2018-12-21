@@ -42,21 +42,25 @@ namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
             Func<CNTKDictionary> weightInit = () => Initializers.GlorotNormal(random.Next());
             var biasInit = Initializers.Zero();
 
+            // Ensure reproducible results with CNTK.
+            CNTKLib.SetFixedRandomSeed((uint)random.Next());
+            CNTKLib.ForceDeterministicAlgorithms();
+
             // Create the architecture.
             var input = Layers.Input(inputShape, dataType);
             // scale input between 0 and 1.
             var scaledInput = CNTKLib.ElementTimes(Constant.Scalar(0.00390625f, device), input);
 
             var network = scaledInput
-                .Conv2D((3, 3), 32, (1, 1), weightInit(), biasInit, device, dataType)
+                .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
-                .MaxPool2D((2, 2), (2, 2))
+                .MaxPool2D((2, 2), (2, 2), Padding.None)
 
-                .Conv2D((3, 3), 32, (1, 1), weightInit(), biasInit, device, dataType)
+                .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
-                .MaxPool2D((2, 2), (2, 2))
+                .MaxPool2D((2, 2), (2, 2), Padding.None)
 
-                .Conv2D((3, 3), 32, (1, 1), weightInit(), biasInit, device, dataType)
+                .Conv2D((3, 3), 32, (1, 1), Padding.None, weightInit(), biasInit, device, dataType)
                 .ReLU()
                 
                 .Dense(64, weightInit(), biasInit, device, dataType)

@@ -8,22 +8,25 @@ namespace CntkCatalyst.LayerFunctions
     /// </summary>
     public static partial class Layers
     {
-        public static Function Conv2D(this Function input,
+        public static Function ConvTranspose2D(this Function input,
             ValueTuple<int, int> filterShape,
             int filterCount,
             ValueTuple<int, int> filterStride,
             Padding padding,
+            ValueTuple<int, int> outputShape,
             CNTKDictionary weightInitializer,
             CNTKDictionary biasInitializer,
             DeviceDescriptor device,
             DataType dataType)
         {
+            // Notice that the order of the filter arguments
+            // are different compared to conventional convolution.
             var filterSizes = new int[]
             {
                 filterShape.Item1,
                 filterShape.Item2,
-                NDShape.InferredDimension, // Infer number of channels in input.
-                filterCount
+                filterCount,
+                NDShape.InferredDimension // Infer number of channels in input.
             };
 
             var filterStrides = new int[]
@@ -32,8 +35,15 @@ namespace CntkCatalyst.LayerFunctions
                 filterStride.Item2,
             };
 
-            return Conv(input, filterSizes, filterCount, filterStrides, 
-                padding, weightInitializer, biasInitializer, 
+            var outputSizes = new int[]
+            {
+                outputShape.Item1,
+                outputShape.Item2,
+                filterCount,
+            };
+
+            return ConvTranspose(input, filterSizes, filterCount, filterStrides,
+                padding, outputSizes, weightInitializer, biasInitializer,
                 device, dataType);
         }
     }

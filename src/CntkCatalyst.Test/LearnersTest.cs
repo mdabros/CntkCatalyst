@@ -41,11 +41,18 @@ namespace CntkCatalyst.Test
         {
             var expectedL1Regularization = 0.1;
             var expectedL2Regularization = 0.001;
+            var expectedGradientClippingThreshold = 1.0;
+            var expectedGradientClippingWithTrauncation = false;
 
-            var sut = Learners.SetAdditionalOptions(expectedL1Regularization, expectedL2Regularization);
+            var sut = Learners.SetAdditionalOptions(expectedL1Regularization, 
+                expectedL2Regularization, 
+                expectedGradientClippingThreshold,
+                expectedGradientClippingWithTrauncation);
 
             Assert.AreEqual(expectedL1Regularization, sut.l1RegularizationWeight);
             Assert.AreEqual(expectedL2Regularization, sut.l2RegularizationWeight);
+            Assert.AreEqual(expectedGradientClippingThreshold, sut.gradientClippingThresholdPerSample);
+            Assert.AreEqual(expectedGradientClippingWithTrauncation, sut.gradientClippingWithTruncation);
         }
     }
 }

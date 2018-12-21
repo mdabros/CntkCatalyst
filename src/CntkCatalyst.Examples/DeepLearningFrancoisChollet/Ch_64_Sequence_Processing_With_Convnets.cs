@@ -43,17 +43,21 @@ namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
             Func<CNTKDictionary> weightInit = () => Initializers.GlorotNormal(random.Next());
             var biasInit = Initializers.Zero();
 
+            // Ensure reproducible results with CNTK.
+            CNTKLib.SetFixedRandomSeed((uint)random.Next());
+            CNTKLib.ForceDeterministicAlgorithms();
+
             //TODO: Fix for full network.
 
             // Create the architecture.
             var network = Layers.Input(inputShape, dataType, isSparse: true)
                 .Embedding(8, weightInit(), dataType, device)
-                //.Conv1D(7, 32, 1, weightInit(), biasInit, device, dataType)
+                //.Conv1D(7, 32, 1, Padding.None, weightInit(), biasInit, device, dataType)
                 //.ReLU()
                 //.MaxPool1D(5, 5)
                 //.Dense(32, weightInit(), biasInit, device, dataType)
                 //.ReLU()
-                //.Conv1D(7, 32, 1, weightInit(), biasInit, device, dataType)
+                //.Conv1D(7, 32, 1, Padding.None, weightInit(), biasInit, device, dataType)
                 //.ReLU()
                 //.GlobalMaxPooling1D()
                 .Dense(numberOfClasses, weightInit(), biasInit, device, dataType)
