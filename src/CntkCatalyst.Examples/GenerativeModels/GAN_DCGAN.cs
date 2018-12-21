@@ -166,16 +166,16 @@ namespace CntkCatalyst.Examples.GenerativeModels
         {
             var generatorNetwork = input
                  .Dense(1024, weightInit(), biasInit, device, dataType)
-                 .BatchNormalization(false, device, dataType)
+                 .BatchNorm(BatchNorm.Regular, device, dataType)
                  .ReLU()
 
                  .Dense(7 * 7 * 128, weightInit(), biasInit, device, dataType)
-                 .BatchNormalization(false, device, dataType)
+                 .BatchNorm(BatchNorm.Regular, device, dataType)
                  .ReLU()
                  .Reshape(NDShape.CreateNDShape(new int[] { 7, 7, 128 }))
 
                  .ConvTranspose2D((5, 5), 128, (2, 2), Padding.Zeros, (14, 14), weightInit(), biasInit, device, dataType)
-                 .BatchNormalization(true, device, dataType)
+                 .BatchNorm(BatchNorm.Spatial, device, dataType)
                  .ReLU()
 
                  .ConvTranspose2D((5, 5), 1, (2, 2), Padding.Zeros, (28, 28), weightInit(), biasInit, device, dataType)
@@ -193,15 +193,15 @@ namespace CntkCatalyst.Examples.GenerativeModels
                  .Reshape(NDShape.CreateNDShape(new int[] { 28, 28, 1 }))
 
                  .Conv2D((5, 5), 1, (2, 2), Padding.None, weightInit(), biasInit, device, dataType)
-                 .BatchNormalization(true, device, dataType)
+                 .BatchNorm(BatchNorm.Spatial, device, dataType)
                  .LeakyReLU(0.2)
 
                  .Conv2D((5, 5), 64, (2, 2), Padding.None, weightInit(), biasInit, device, dataType)
-                 .BatchNormalization(true, device, dataType)
+                 .BatchNorm(BatchNorm.Spatial, device, dataType)
                  .LeakyReLU(0.2)
 
                  .Dense(1024, weightInit(), biasInit, device, dataType)
-                 .BatchNormalization(false, device, dataType)
+                 .BatchNorm(BatchNorm.Regular, device, dataType)
                  .LeakyReLU(0.2)
 
                  .Dense(1, weightInit(), biasInit, device, dataType)

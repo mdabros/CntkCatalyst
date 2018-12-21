@@ -69,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompositeMinibatchSource.cs" />
+    <Compile Include="LayerFunctions\BatchNorm.cs" />
     <Compile Include="LayerFunctions\Layers.Conv.cs" />
     <Compile Include="LayerFunctions\Layers.ConvTranspose.cs" />
     <Compile Include="LayerFunctions\Layers.ConvTranspose2D.cs" />
