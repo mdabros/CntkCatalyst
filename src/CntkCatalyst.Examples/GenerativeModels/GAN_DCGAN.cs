@@ -91,10 +91,12 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 CNTKLib.Log(CNTKLib.Minus(Constant.Scalar(1.0f, device), discriminatorNetworkFake))));
 
             // Create fitters for the training loop.
-            var generatorLearner = Learners.Adam(generatorNetwork.Parameters(), learningRate: 0.0002, momentum: 0.5);
+            var generatorLearner = Learners.Adam(generatorNetwork.Parameters(), 
+                learningRate: 0.0002, momentum: 0.5, gradientClippingThresholdPerSample: 1.0);
             var generatorFitter = CreateFitter(generatorLearner, generatorNetwork, generatorLossFunc, device);
 
-            var discriminatorLearner = Learners.SGD(discriminatorNetwork.Parameters(), learningRate: 0.0002, l2Regularization: 0.0);
+            var discriminatorLearner = Learners.SGD(discriminatorNetwork.Parameters(), 
+                learningRate: 0.0002, gradientClippingThresholdPerSample: 1.0);
             var discriminatorFitter = CreateFitter(discriminatorLearner, discriminatorNetwork, discriminatorLossFunc, device);
 
             int epochs = 30;
