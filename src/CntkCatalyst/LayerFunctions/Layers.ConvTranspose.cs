@@ -7,7 +7,7 @@ namespace CntkCatalyst.LayerFunctions
     {
         internal static Function ConvTranspose(this Function input,
                     int[] filterShape,
-                    int filterChannels,
+                    int filterCount,
                     int[] filterStride,
                     Padding padding, // TODO: Consider if padding should be decided pr. dimension.
                     int[] outputShape,
@@ -55,7 +55,7 @@ namespace CntkCatalyst.LayerFunctions
                 // Bias dimensions should be defined for filter dimensions.
                 // For instance for 2D case: (1, 1, filterChannels).
                 var biasShape = filterStride.Select(s => 1).ToList();
-                biasShape.Add(filterChannels);
+                biasShape.Add(filterCount);
 
                 var bias = new Parameter(NDShape.CreateNDShape(biasShape.ToArray()),
                     dataType, biasInitializer, device);

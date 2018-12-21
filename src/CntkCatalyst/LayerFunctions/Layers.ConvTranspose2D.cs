@@ -11,7 +11,7 @@ namespace CntkCatalyst.LayerFunctions
         public static Function ConvTranspose2D(this Function input,
             ValueTuple<int, int> filterShape,
             int filterCount,
-            ValueTuple<int, int> strideShape,
+            ValueTuple<int, int> filterStride,
             Padding padding,
             ValueTuple<int, int> outputShape,
             CNTKDictionary weightInitializer,
@@ -31,8 +31,8 @@ namespace CntkCatalyst.LayerFunctions
 
             var filterStrides = new int[]
             {
-                strideShape.Item1,
-                strideShape.Item2,
+                filterStride.Item1,
+                filterStride.Item2,
             };
 
             var outputSizes = new int[]
