@@ -90,12 +90,18 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 CNTKLib.Log(CNTKLib.Minus(Constant.Scalar(1.0f, device), discriminatorNetworkFake))));
 
             // Create fitters for the training loop.
-            var generatorFitter = CreateFitter(generatorNetwork, generatorLossFunc, device);
-            var discriminatorFitter = CreateFitter(discriminatorNetwork, discriminatorLossFunc, device);
+            // Generator uses Adam and discriminator SGD. 
+            // Advice from: https://github.com/soumith/ganhacks
+            var generatorLearner = Learners.Adam(generatorNetwork.Parameters(),
+                learningRate: 0.0002, momentum: 0.5, gradientClippingThresholdPerSample: 1.0);
+            var generatorFitter = CreateFitter(generatorLearner, generatorNetwork, generatorLossFunc, device);
 
-            // Note, that the network needs to train for many epochs to show realistic results.
-            int epochs = 700;
-            int batchSize = 1024;
+            var discriminatorLearner = Learners.SGD(discriminatorNetwork.Parameters(),
+                learningRate: 0.0002, gradientClippingThresholdPerSample: 1.0);
+            var discriminatorFitter = CreateFitter(discriminatorLearner, discriminatorNetwork, discriminatorLossFunc, device);
+
+            int epochs = 30;
+            int batchSize = 128;
             
             // Controls how many steps the discriminator takes, 
             // each time the generator takes 1 step.
@@ -198,9 +204,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
             return new CntkMinibatchSource(minibatchSource, nameToVariable);
         }
 
-        static Fitter CreateFitter(Function network, Function loss, DeviceDescriptor device)
+        static Fitter CreateFitter(Learner learner, Function network, Function loss, DeviceDescriptor device)
         {
-            var learner = Learners.MomentumSGD(network.Parameters(), learningRate: 0.00005, momentum: 0.9);
             var trainer = Trainer.CreateTrainer(network, loss, loss, new List<Learner> { learner });
             var fitter = new Fitter(trainer, device);
 
