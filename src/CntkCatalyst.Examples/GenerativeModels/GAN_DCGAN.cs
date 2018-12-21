@@ -91,6 +91,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 CNTKLib.Log(CNTKLib.Minus(Constant.Scalar(1.0f, device), discriminatorNetworkFake))));
 
             // Create fitters for the training loop.
+            // Generator uses Adam and discriminator SGD. 
+            // Advice from: https://github.com/soumith/ganhacks
             var generatorLearner = Learners.Adam(generatorNetwork.Parameters(), 
                 learningRate: 0.0002, momentum: 0.5, gradientClippingThresholdPerSample: 1.0);
             var generatorFitter = CreateFitter(generatorLearner, generatorNetwork, generatorLossFunc, device);
