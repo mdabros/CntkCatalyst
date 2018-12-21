@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using CNTK;
+﻿using CNTK;
 
 namespace CntkCatalyst.LayerFunctions
 {
