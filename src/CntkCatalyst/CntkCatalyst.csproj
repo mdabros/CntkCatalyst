@@ -84,8 +84,8 @@
     <Compile Include="LayerFunctions\Layers.Embedding.cs" />
     <Compile Include="LayerFunctions\Layers.Flatten.cs" />
     <Compile Include="LayerFunctions\Layers.GlobalMaxPooling1D.cs" />
-    <Compile Include="LayerFunctions\Layers.Pool2D.cs" />
-    <Compile Include="LayerFunctions\Layers.Pool1D.cs" />
+    <Compile Include="LayerFunctions\Layers.MaxPool2D.cs" />
+    <Compile Include="LayerFunctions\Layers.MaxPool1D.cs" />
     <Compile Include="LayerFunctions\Layers.Conv2D.cs" />
     <Compile Include="LayerFunctions\Layers.Dense.cs" />
     <Compile Include="LayerFunctions\Layers.Input.cs" />
