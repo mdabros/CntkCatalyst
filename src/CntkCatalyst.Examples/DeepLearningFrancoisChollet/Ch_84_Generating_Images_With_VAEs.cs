@@ -8,7 +8,7 @@ using CNTK;
 using CntkCatalyst.LayerFunctions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CntkCatalyst.Examples.GenerativeModels
+namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
 {
     /// <summary>
     /// Example based on:
