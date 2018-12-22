@@ -25,7 +25,6 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Prepare data
             var baseDataDirectoryPath = @"E:\DataSets\Mnist";
             var trainFilePath = Path.Combine(baseDataDirectoryPath, "Train-28x28_cntk_text.txt");
-            var testFilePath = Path.Combine(baseDataDirectoryPath, "Test-28x28_cntk_text.txt");
 
             // Define data type and device for the model.
             var dataType = DataType.Float;
@@ -49,7 +48,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Setup the encoder, this encodes the input into a mean and variance parameter.
             var (mean, logVariance) = Encoder(scaledInputVariable, latentSpaceSize, weightInit, biasInit, device, dataType);
 
-            // Setup latent space sampling. This can draw a latent point using a small random epsilon.
+            // Setup latent space sampling. This will draw a latent point using a small random epsilon.
             var epsilon = CNTKLib.NormalRandom(new int[] { latentSpaceSize }, dataType);
             var latentSpaceSampler = CNTKLib.Plus(mean, CNTKLib.ElementTimes(CNTKLib.Exp(logVariance), epsilon));
 
@@ -59,22 +58,20 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Create minibatch source for providing the real images.
             var nameToVariable = new Dictionary<string, Variable> { { "features", decoderNetwork.Arguments[0] } };
             var trainMinibatchSource = CreateMinibatchSource(trainFilePath, nameToVariable, randomize: true);
-            var testMinibatchSource = CreateMinibatchSource(testFilePath, nameToVariable, randomize: false);
 
-            // Regularization metric
-            var square_ = CNTKLib.Square(mean);
-            var exp_ = CNTKLib.Exp(logVariance);
-            var constant_1 = Constant.Scalar(dataType, 1.0);
-            var diff_ = CNTKLib.Plus(constant_1, logVariance);
-            diff_ = CNTKLib.Minus(diff_, square_);
-            diff_ = CNTKLib.Minus(diff_, exp_);
-            var constant_2 = Constant.Scalar(dataType, -5e-4);
-            var regularization_metric = CNTKLib.ElementTimes(constant_2, CNTKLib.ReduceMean(diff_, Axis.AllStaticAxes()));
+            // Reconstruction loss. Forces the decoded samples to match the initial inputs.
+            var reconstructionLoss = Losses.BinaryCrossEntropy(decoderNetwork.Output, scaledInputVariable);
 
-            // Overall loss function
-            var crossentropy_loss = Losses.BinaryCrossEntropy(decoderNetwork.Output, scaledInputVariable);
-            crossentropy_loss = CNTKLib.ReduceMean(crossentropy_loss, Axis.AllStaticAxes());
-            var loss = CNTKLib.Plus(crossentropy_loss, regularization_metric);
+            // Regularization loss: Helps in learning well-formed latent spaces and reducing overfitting to the training data.
+            // kl_loss = -5e-4 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis = -1)
+            var difference = CNTKLib.Plus(Constant.Scalar(dataType, 1.0), logVariance);
+            difference = CNTKLib.Minus(difference, CNTKLib.Square(mean));
+            difference = CNTKLib.Minus(difference, CNTKLib.Exp(logVariance));
+            var regularizationLoss = CNTKLib.ElementTimes(Constant.Scalar(dataType, -5e-4), 
+                CNTKLib.ReduceMean(difference, Axis.AllStaticAxes()));
+
+            // Overall loss function. Sum of reconstruction- and regularization loss.
+            var loss = CNTKLib.Plus(reconstructionLoss, regularizationLoss);
 
             // Setup trainer.
             var learner = Learners.Adam(decoderNetwork.Parameters(), learningRate: 0.001, momentum: 0.9);
@@ -85,8 +82,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             Trace.WriteLine(model.Summary());
 
             // Train the model.
-            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 10,
-                validationMinibatchSource: testMinibatchSource);
+            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 10);
 
             //// Sample 15x15 images across the latent space.
             
