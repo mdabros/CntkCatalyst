@@ -181,18 +181,22 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
         static Dictionary<Variable, Value> SampleMinibatchForGrid(DeviceDescriptor device, Variable decoderInputVariable, int gridSize)
         {
-            var data = new float[gridSize * gridSize * 2];
-            var sample_start = -2f;
-            var sample_interval_width = 4f;
-            for (int i = 0, pos = 0; i < gridSize; i++)
+            var latentGridData = new float[gridSize * gridSize * 2];
+
+            // Sample latent space in a grid, from -2 to 2, with "gridSize" points in each direction.
+            var sampleStart = -2f;
+            var sampleIntervalWidth = 4f;
+
+            var index = 0;
+            for (int x = 0; x < gridSize; x++)
             {
-                for (int j = 0; j < gridSize; j++)
+                for (int y = 0; y < gridSize; y++)
                 {
-                    data[pos++] = sample_start + (sample_interval_width / (gridSize - 1)) * i;
-                    data[pos++] = sample_start + (sample_interval_width / (gridSize - 1)) * j;
+                    latentGridData[index++] = sampleStart + (sampleIntervalWidth / (gridSize - 1)) * x;
+                    latentGridData[index++] = sampleStart + (sampleIntervalWidth / (gridSize - 1)) * y;
                 }
             }
-            var value = Value.CreateBatch(decoderInputVariable.Shape, data, device);
+            var value = Value.CreateBatch(decoderInputVariable.Shape, latentGridData, device);
 
             var minibatch = new Dictionary<Variable, Value>
             {
