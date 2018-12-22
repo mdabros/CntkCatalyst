@@ -179,7 +179,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
             return new CntkMinibatchSource(minibatchSource, nameToVariable);
         }
 
-        static Dictionary<Variable, Value> SampleMinibatchForGrid(DeviceDescriptor device, Variable decoderInputVariable, int gridSize)
+        static Dictionary<Variable, Value> SampleMinibatchForGrid(DeviceDescriptor device, 
+            Variable decoderInputVariable, int gridSize)
         {
             var latentGridData = new float[gridSize * gridSize * 2];
 
