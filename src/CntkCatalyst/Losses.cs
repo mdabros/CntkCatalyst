@@ -4,24 +4,36 @@ namespace CntkCatalyst
 {
     public static class Losses
     {
-        public static Function MeanAbsoluteError(Variable predictions, Variable targets)
+        public static Function MeanSquaredError(Variable targets, Variable predictions)
         {
-            return CNTKLib.ReduceMean(CNTKLib.Abs(CNTKLib.Minus(predictions, targets)), new Axis(-1));
+            var errors = CNTKLib.Minus(targets, predictions);
+            var squaredErrors = CNTKLib.Square(errors);
+            return ReduceMeanAll(squaredErrors);
         }
 
-        public static Function MeanSquaredError(Variable predictions, Variable targets)
+        public static Function MeanAbsoluteError(Variable targets, Variable predictions)
         {
-            return CNTKLib.ReduceMean(CNTKLib.Square(CNTKLib.Minus(predictions, targets)), new Axis(-1));
+            var errors = CNTKLib.Minus(targets, predictions);
+            var absoluteErrors = CNTKLib.Abs(errors);
+            return ReduceMeanAll(absoluteErrors);
         }
 
         public static Function CategoricalCrossEntropy(Variable predictions, Variable targets)
         {
-            return CNTKLib.CrossEntropyWithSoftmax(predictions, targets);
+            var erros = CNTKLib.CrossEntropyWithSoftmax(predictions, targets);
+            return ReduceMeanAll(erros);
         }
 
         public static Function BinaryCrossEntropy(Variable predictions, Variable targets)
         {
-            return CNTKLib.BinaryCrossEntropy(predictions, targets);
+            var errors = CNTKLib.BinaryCrossEntropy(predictions, targets);
+            return ReduceMeanAll(errors);
+        }
+
+        static Function ReduceMeanAll(Function errors)
+        {
+            var allAxes = Axis.AllStaticAxes();
+            return CNTKLib.ReduceMean(errors, allAxes);
         }
     }
 }
