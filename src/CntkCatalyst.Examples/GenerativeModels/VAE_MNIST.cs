@@ -85,12 +85,12 @@ namespace CntkCatalyst.Examples.GenerativeModels
             Trace.WriteLine(model.Summary());
 
             // Train the model.
-            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 1,
+            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 10,
                 validationMinibatchSource: testMinibatchSource);
 
-            //// Sample 15x15 images from the latent space.
+            //// Sample 15x15 images across the latent space.
             
-            // Image generation only requires use the decoder part of the network.
+            // Image generation only requires use of the decoder part of the network.
             // Clone and replace the latentSpaceSampler from training with a new decoder input variable. 
             var decoderInputVariable = Variable.InputVariable(latentSpaceSampler.Output.Shape, dataType);
             var replacements = new Dictionary<Variable, Variable>() { { latentSpaceSampler, decoderInputVariable } };
@@ -128,7 +128,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
                  .Conv2D((3, 3), 64, (1, 1), Padding.Zeros, weightInit(), biasInit, device, dataType)
                  .ReLU()
 
-                 .Dense(32, weightInit(), biasInit, device, dataType);
+                 .Dense(32, weightInit(), biasInit, device, dataType)
+                 .ReLU();
 
             var mean = encoderNetwork.Dense(latentSpaceSize, weightInit(), biasInit, device, dataType);
             var logVariance = encoderNetwork.Dense(latentSpaceSize, weightInit(), biasInit, device, dataType);
