@@ -89,11 +89,10 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 validationMinibatchSource: testMinibatchSource);
 
             //// Sample 15x15 images from the latent space.
-
-            // Setup decoder input for prediction.
-            // This will only use the decoder part of the network.
+            
+            // Image generation only requires use the decoder part of the network.
+            // Clone and replace the latentSpaceSampler from training with a new decoder input variable. 
             var decoderInputVariable = Variable.InputVariable(latentSpaceSampler.Output.Shape, dataType);
-            // Clone and replace the training input variable with the prediction input variable. 
             var replacements = new Dictionary<Variable, Variable>() { { latentSpaceSampler, decoderInputVariable } };
             var decoder = decoderNetwork.Clone(ParameterCloningMethod.Freeze, replacements);
 
