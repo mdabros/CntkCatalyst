@@ -14,6 +14,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
     /// Example based on:
     /// https://github.com/mdabros/deep-learning-with-python-notebooks/blob/master/8.4-generating-images-with-vaes.ipynb
     /// 
+    /// Original VAE papers:
+    /// https://arxiv.org/pdf/1401.4082.pdf
+    /// https://arxiv.org/pdf/1312.6114.pdf
     /// 
     /// </summary>
     [TestClass]
