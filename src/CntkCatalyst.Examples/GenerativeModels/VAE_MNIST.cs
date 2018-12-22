@@ -40,21 +40,21 @@ namespace CntkCatalyst.Examples.GenerativeModels
             CNTKLib.SetFixedRandomSeed((uint)random.Next());
             CNTKLib.ForceDeterministicAlgorithms();
 
-            // Setup encoder.
-            var encoderInputShape = NDShape.CreateNDShape(new int[] { 28, 28, 1 });
-            var encoderInput = Variable.InputVariable(encoderInputShape, dataType);
-            var scaledEncoderInput = CNTKLib.ElementTimes(Constant.Scalar(0.00390625f, device), encoderInput);
-            var encoderNetwork = Encoder(scaledEncoderInput, weightInit, biasInit, device, dataType);
+            // Setup input dimensions and variables.
+            var inputShape = NDShape.CreateNDShape(new int[] { 28, 28, 1 });
+            var InputVariable = Variable.InputVariable(inputShape, dataType);
+            var scaledInputVariable = CNTKLib.ElementTimes(Constant.Scalar(0.00390625f, device), InputVariable);
 
-            // Setup latent variables.
-            var latentSize = 2;
-            var z_mean = encoderNetwork.Dense(latentSize, weightInit(), biasInit, device, dataType);
-            var z_log_var = encoderNetwork.Dense(latentSize, weightInit(), biasInit, device, dataType);
-            var epsilon = CNTKLib.NormalRandom(new int[] { latentSize }, dataType);
-            var z = CNTKLib.Plus(z_mean, CNTKLib.ElementTimes(CNTKLib.Exp(z_log_var), epsilon), "decoderInputNode");
+            const int latentSpaceSize = 2;
+            // Setup the encoder, this encodes the input into a mean and variance parameter.
+            var (mean, logVariance) = Encoder(scaledInputVariable, latentSpaceSize, weightInit, biasInit, device, dataType);
 
-            // Setup decoder            
-            var decoderNetwork = Decoder(z, weightInit, biasInit, device, dataType);
+            // Setup latent space sampling. This can draw a latent point using a small random epsilon.
+            var epsilon = CNTKLib.NormalRandom(new int[] { latentSpaceSize }, dataType);
+            var latentSpaceSampler = CNTKLib.Plus(mean, CNTKLib.ElementTimes(CNTKLib.Exp(logVariance), epsilon));
+
+            // Setup decoder, this decodes from latent space back to an image.            
+            var decoderNetwork = Decoder(latentSpaceSampler, weightInit, biasInit, device, dataType);
 
             // Create minibatch source for providing the real images.
             var nameToVariable = new Dictionary<string, Variable> { { "features", decoderNetwork.Arguments[0] } };
@@ -62,17 +62,17 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var testMinibatchSource = CreateMinibatchSource(testFilePath, nameToVariable, randomize: false);
 
             // Regularization metric
-            var square_ = CNTKLib.Square(z_mean);
-            var exp_ = CNTKLib.Exp(z_log_var);
+            var square_ = CNTKLib.Square(mean);
+            var exp_ = CNTKLib.Exp(logVariance);
             var constant_1 = Constant.Scalar(dataType, 1.0);
-            var diff_ = CNTKLib.Plus(constant_1, z_log_var);
+            var diff_ = CNTKLib.Plus(constant_1, logVariance);
             diff_ = CNTKLib.Minus(diff_, square_);
             diff_ = CNTKLib.Minus(diff_, exp_);
             var constant_2 = Constant.Scalar(dataType, -5e-4);
             var regularization_metric = CNTKLib.ElementTimes(constant_2, CNTKLib.ReduceMean(diff_, Axis.AllStaticAxes()));
 
             // Overall loss function
-            var crossentropy_loss = Losses.BinaryCrossEntropy(decoderNetwork.Output, scaledEncoderInput);
+            var crossentropy_loss = Losses.BinaryCrossEntropy(decoderNetwork.Output, scaledInputVariable);
             crossentropy_loss = CNTKLib.ReduceMean(crossentropy_loss, Axis.AllStaticAxes());
             var loss = CNTKLib.Plus(crossentropy_loss, regularization_metric);
 
@@ -85,21 +85,22 @@ namespace CntkCatalyst.Examples.GenerativeModels
             Trace.WriteLine(model.Summary());
 
             // Train the model.
-            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 10,
+            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 1,
                 validationMinibatchSource: testMinibatchSource);
 
             //// Sample 15x15 images from the latent space.
-            
+
             // Setup decoder input for prediction.
-            var decoderInputNode = decoderNetwork.FindByName("decoderInputNode");
-            var decoderInputVariable = Variable.InputVariable(decoderInputNode.Output.Shape, dataType);
-            var replacements = new Dictionary<Variable, Variable>() { { decoderInputNode, decoderInputVariable } };
+            // This will only use the decoder part of the network.
+            var decoderInputVariable = Variable.InputVariable(latentSpaceSampler.Output.Shape, dataType);
+            // Clone and replace the training input variable with the prediction input variable. 
+            var replacements = new Dictionary<Variable, Variable>() { { latentSpaceSampler, decoderInputVariable } };
             var decoder = decoderNetwork.Clone(ParameterCloningMethod.Freeze, replacements);
 
             // Sample 15x15 samples from the latent space
             var minibatch = SampleMinibatchForGrid(device, decoderInputVariable, gridSize: 15);
 
-            // Transform from latent space to images using the decoder.
+            // Transform from points in latent space to images using the decoder.
             var predictor = new Predictor(decoder, device);
             var images = predictor.PredictNextStep(minibatch);
             var imagesData = images.SelectMany(t => t).ToArray();
@@ -111,7 +112,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
             app.Run(window);
         }
 
-        Function Encoder(Function input, Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
+        (Function mean, Function logVariance) Encoder(Function input, int latentSpaceSize, 
+            Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
             DeviceDescriptor device, DataType dataType)
         {
             var encoderNetwork = input
@@ -129,7 +131,10 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
                  .Dense(32, weightInit(), biasInit, device, dataType);
 
-            return encoderNetwork;
+            var mean = encoderNetwork.Dense(latentSpaceSize, weightInit(), biasInit, device, dataType);
+            var logVariance = encoderNetwork.Dense(latentSpaceSize, weightInit(), biasInit, device, dataType);
+
+            return (mean, logVariance);
         }
 
         Function Decoder(Function input, Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
