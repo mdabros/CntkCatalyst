@@ -4,14 +4,14 @@ namespace CntkCatalyst
 {
     public static class Losses
     {
-        public static Function MeanSquaredError(Variable targets, Variable predictions)
+        public static Function MeanSquaredError(Variable predictions, Variable targets)
         {
             var errors = CNTKLib.Minus(targets, predictions);
             var squaredErrors = CNTKLib.Square(errors);
             return ReduceMeanAll(squaredErrors);
         }
 
-        public static Function MeanAbsoluteError(Variable targets, Variable predictions)
+        public static Function MeanAbsoluteError(Variable predictions, Variable targets)
         {
             var errors = CNTKLib.Minus(targets, predictions);
             var absoluteErrors = CNTKLib.Abs(errors);
