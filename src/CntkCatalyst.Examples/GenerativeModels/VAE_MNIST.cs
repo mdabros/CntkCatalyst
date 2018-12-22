@@ -21,6 +21,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
     /// Paper using convolutional VAE:
     /// https://arxiv.org/pdf/1609.08976.pdf
     /// 
+    /// This example needs manual download of the MNIST dataset in CNTK format.
+    /// Instruction on how to download and convert the dataset can be found here:
+    /// https://github.com/Microsoft/CNTK/tree/master/Examples/Image/DataSets/MNIST
     /// </summary>
     [TestClass]
     public class VAE_MNIST
