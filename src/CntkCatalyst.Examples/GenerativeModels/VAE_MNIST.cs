@@ -62,13 +62,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Reconstruction loss. Forces the decoded samples to match the initial inputs.
             var reconstructionLoss = Losses.BinaryCrossEntropy(decoderNetwork.Output, scaledInputVariable);
 
-            // Regularization loss: Helps in learning well-formed latent spaces and reducing overfitting to the training data.
-            // kl_loss = -5e-4 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis = -1)
-            var difference = CNTKLib.Plus(Constant.Scalar(dataType, 1.0), logVariance);
-            difference = CNTKLib.Minus(difference, CNTKLib.Square(mean));
-            difference = CNTKLib.Minus(difference, CNTKLib.Exp(logVariance));
-            var regularizationLoss = CNTKLib.ElementTimes(Constant.Scalar(dataType, -5e-4), 
-                CNTKLib.ReduceMean(difference, Axis.AllStaticAxes()));
+            // Regularization loss. Helps in learning well-formed latent spaces and reducing overfitting to the training data.            
+            var regularizationLoss = RegularizationLoss(mean, logVariance, dataType);
 
             // Overall loss function. Sum of reconstruction- and regularization loss.
             var loss = CNTKLib.Plus(reconstructionLoss, regularizationLoss);
@@ -84,8 +79,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Train the model.
             model.Fit(trainMinibatchSource, batchSize: 16, epochs: 10);
 
-            //// Sample 15x15 images across the latent space.
-            
+            //// Use the decoder to sample 15x15 images across the latent space.
+
             // Image generation only requires use of the decoder part of the network.
             // Clone and replace the latentSpaceSampler from training with a new decoder input variable. 
             var decoderInputVariable = Variable.InputVariable(latentSpaceSampler.Output.Shape, dataType);
@@ -100,7 +95,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var images = predictor.PredictNextStep(minibatch);
             var imagesData = images.SelectMany(t => t).ToArray();
 
-            // Show the example images.
+            // Show examples.
             var app = new Application();
             var window = new PlotWindowBitMap("Generated Images", imagesData, 28, 28, 1, true);
             window.Show();
@@ -151,6 +146,19 @@ namespace CntkCatalyst.Examples.GenerativeModels
             return decoderNetwork;
         }
 
+        static Function RegularizationLoss(Function mean, Function logVariance, DataType dataType)
+        {
+            // kl_loss = -5e-4 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis = -1)
+            var difference = CNTKLib.Plus(Constant.Scalar(dataType, 1.0), logVariance);
+            difference = CNTKLib.Minus(difference, CNTKLib.Square(mean));
+            difference = CNTKLib.Minus(difference, CNTKLib.Exp(logVariance));
+
+            var regularizationLoss = CNTKLib.ElementTimes(Constant.Scalar(dataType, -5e-4),
+                CNTKLib.ReduceMean(difference, Axis.AllStaticAxes()));
+
+            return regularizationLoss;
+        }
+
         CntkMinibatchSource CreateMinibatchSource(string mapFilePath, Dictionary<string, Variable> nameToVariable,
             bool randomize)
         {
@@ -190,6 +198,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             {
                 { decoderInputVariable, value},
             };
+
             return minibatch;
         }
     }
