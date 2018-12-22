@@ -121,7 +121,7 @@ namespace CntkCatalyst.Examples.DeepLearningFrancoisChollet
             var streamConfigurations = new List<StreamConfiguration>();
             foreach (var kvp in nameToVariable)
             {
-                var size = kvp.Value.Shape.Dimensions.Aggregate((d1, d2) => d1 * d2);
+                var size = kvp.Value.Shape.TotalSize;
                 var name = kvp.Key;
                 streamConfigurations.Add(new StreamConfiguration(name, size));
             }

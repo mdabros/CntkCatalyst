@@ -35,7 +35,7 @@ namespace CntkCatalyst.Examples
                 var name = kvp.Key;
                 var variable = kvp.Value;
                 var sampleShape = variable.Shape;
-                var totalElementCount = minibatchSizeInSamples * sampleShape.Dimensions.Aggregate((d1, d2) => d1 * d2);
+                var totalElementCount = minibatchSizeInSamples * sampleShape.TotalSize;
 
                 var data = m_nameToData[name];
                 if(data.Length != totalElementCount)
