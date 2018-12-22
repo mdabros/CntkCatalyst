@@ -26,7 +26,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
     /// https://github.com/Microsoft/CNTK/tree/master/Examples/Image/DataSets/MNIST
     /// </summary>
     [TestClass]
-    public class VAE_MNIST
+    public class Ch_84_Generating_Images_With_VAEs
     {
         [TestMethod]
         public void Run()
@@ -111,7 +111,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             app.Run(window);
         }
 
-        (Function mean, Function logVariance) Encoder(Function input, int latentSpaceSize, 
+        (Function mean, Function logVariance) Encoder(Function input, int latentSpaceSize,
             Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
             DeviceDescriptor device, DataType dataType)
         {
@@ -188,7 +188,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             return new CntkMinibatchSource(minibatchSource, nameToVariable);
         }
 
-        static Dictionary<Variable, Value> SampleMinibatchForGrid(DeviceDescriptor device, 
+        static Dictionary<Variable, Value> SampleMinibatchForGrid(DeviceDescriptor device,
             Variable decoderInputVariable, int gridSize)
         {
             var latentGridData = new float[gridSize * gridSize * 2];
