@@ -18,6 +18,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
     /// https://arxiv.org/pdf/1401.4082.pdf
     /// https://arxiv.org/pdf/1312.6114.pdf
     /// 
+    /// Paper using convolutional VAE:
+    /// https://arxiv.org/pdf/1609.08976.pdf
+    /// 
     /// </summary>
     [TestClass]
     public class VAE_MNIST
