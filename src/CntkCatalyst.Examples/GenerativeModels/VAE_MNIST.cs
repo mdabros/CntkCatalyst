@@ -48,19 +48,19 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Setup the encoder, this encodes the input into a mean and variance parameter.
             var (mean, logVariance) = Encoder(scaledInputVariable, latentSpaceSize, weightInit, biasInit, device, dataType);
 
-            // Setup latent space sampling. This will draw a latent point using a small random epsilon.
+            // add latent space sampling. This will draw a latent point using a small random epsilon.
             var epsilon = CNTKLib.NormalRandom(new int[] { latentSpaceSize }, dataType);
             var latentSpaceSampler = CNTKLib.Plus(mean, CNTKLib.ElementTimes(CNTKLib.Exp(logVariance), epsilon));
 
-            // Setup decoder, this decodes from latent space back to an image.            
-            var decoderNetwork = Decoder(latentSpaceSampler, weightInit, biasInit, device, dataType);
+            // add decoder, this decodes from latent space back to an image.            
+            var encoderDecoderNetwork = Decoder(latentSpaceSampler, weightInit, biasInit, device, dataType);
 
-            // Create minibatch source for providing the real images.
-            var nameToVariable = new Dictionary<string, Variable> { { "features", decoderNetwork.Arguments[0] } };
-            var trainMinibatchSource = CreateMinibatchSource(trainFilePath, nameToVariable, randomize: true);
+            // Create minibatch source for providing the input images.
+            var nameToVariable = new Dictionary<string, Variable> { { "features", encoderDecoderNetwork.Arguments[0] } };
+            var minibatchSource = CreateMinibatchSource(trainFilePath, nameToVariable, randomize: true);
 
             // Reconstruction loss. Forces the decoded samples to match the initial inputs.
-            var reconstructionLoss = Losses.BinaryCrossEntropy(decoderNetwork.Output, scaledInputVariable);
+            var reconstructionLoss = Losses.BinaryCrossEntropy(encoderDecoderNetwork.Output, scaledInputVariable);
 
             // Regularization loss. Helps in learning well-formed latent spaces and reducing overfitting to the training data.            
             var regularizationLoss = RegularizationLoss(mean, logVariance, dataType);
@@ -69,15 +69,15 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var loss = CNTKLib.Plus(reconstructionLoss, regularizationLoss);
 
             // Setup trainer.
-            var learner = Learners.Adam(decoderNetwork.Parameters(), learningRate: 0.001, momentum: 0.9);
-            var trainer = Trainer.CreateTrainer(decoderNetwork, loss, loss, new List<Learner> { learner });
+            var learner = Learners.Adam(encoderDecoderNetwork.Parameters(), learningRate: 0.001, momentum: 0.9);
+            var trainer = Trainer.CreateTrainer(encoderDecoderNetwork, loss, loss, new List<Learner> { learner });
             // Create model.
-            var model = new Model(trainer, decoderNetwork, dataType, device);
+            var model = new Model(trainer, encoderDecoderNetwork, dataType, device);
 
             Trace.WriteLine(model.Summary());
 
             // Train the model.
-            model.Fit(trainMinibatchSource, batchSize: 16, epochs: 10);
+            model.Fit(minibatchSource, batchSize: 16, epochs: 10);
 
             //// Use the decoder to sample 15x15 images across the latent space.
 
@@ -85,7 +85,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Clone and replace the latentSpaceSampler from training with a new decoder input variable. 
             var decoderInputVariable = Variable.InputVariable(latentSpaceSampler.Output.Shape, dataType);
             var replacements = new Dictionary<Variable, Variable>() { { latentSpaceSampler, decoderInputVariable } };
-            var decoder = decoderNetwork.Clone(ParameterCloningMethod.Freeze, replacements);
+            var decoder = encoderDecoderNetwork.Clone(ParameterCloningMethod.Freeze, replacements);
 
             // Sample 15x15 samples from the latent space
             var minibatch = SampleMinibatchForGrid(device, decoderInputVariable, gridSize: 15);
