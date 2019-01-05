@@ -89,7 +89,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var discriminatorLossFunc = CNTKLib.Plus(discriminatorNetwork, discriminatorNetworkFake);
 
             var generatorLearner = Learners.Adam(generatorNetwork.Parameters(), 
-                learningRate: 0.00005, momentum: 0.0, varianceMomentum: 0.999);
+                learningRate: 0.00005, momentum: 0.0, varianceMomentum: 0.999, unitGain: false);
             var generatorFitter = CreateFitter(generatorLearner, generatorNetwork, generatorLossFunc, device);
 
             // Clip discriminator parameters.
@@ -104,7 +104,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 .ToList();
 
             var discriminatorLearner = Learners.Adam(discriminatorNetwork.Parameters(),
-                learningRate: 0.00005, momentum: 0.0, varianceMomentum: 0.999);
+                learningRate: 0.00005, momentum: 0.0, varianceMomentum: 0.999, unitGain: false);
             var discriminatorFitter = CreateFitter(discriminatorLearner, discriminatorNetwork, discriminatorLossFunc, device);
 
             int epochs = 30;
@@ -118,7 +118,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // We want to train the discriminator until it can closely estimate the EM distance. 
             // In order to make sure that the discriminator has a sufficient good estimation at the very beginning of the training, 
             // we even train it for 100 iterations before train the generator.
-            int initialDiscriminatorSteps = 100;
+            int initialDiscriminatorSteps = 10;
             int discriminatorSteps = 5;
 
             var isSweepEnd = false;
