@@ -94,6 +94,7 @@
     <Compile Include="DeepLearningFrancoisChollet\Ch_84_Generating_Images_With_VAEs.cs" />
     <Compile Include="GenerativeModels\GAN_DCGAN.cs" />
     <Compile Include="GenerativeModels\GAN_BasicGAN.cs" />
+    <Compile Include="GenerativeModels\GAN_LSGAN.cs" />
     <Compile Include="UniformNoiseMinibatchSource.cs" />
     <Compile Include="ImageUtilities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
