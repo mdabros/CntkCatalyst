@@ -100,6 +100,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var minClip = Constant.Scalar(dataType, -0.01);
             var clippedDiscriminatorParameters = discriminatorNetwork.Parameters()
                 .Select(p => CNTKLib.Clip(p, minClip, maxClip))
+                .Select(f => f.Parameters().Single())
                 .ToList();
 
             var discriminatorLearner = Learners.Adam(discriminatorNetwork.Parameters(),
@@ -108,25 +109,40 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             int epochs = 30;
             int batchSize = 64;
-            
+
             // Controls how many steps the discriminator takes, 
             // each time the generator takes 1 step.
-            // Default from the original paper is 1.
-            int discriminatorSteps = 1;
+            // Note that compared to original GANs, 
+            // we train the discriminator many more times than the generator. 
+            // The reason behind that is the output of the discriminator serves as an estimation of the EM distance. 
+            // We want to train the discriminator until it can closely estimate the EM distance. 
+            // In order to make sure that the discriminator has a sufficient good estimation at the very beginning of the training, 
+            // we even train it for 100 iterations before train the generator.
+            int initialDiscriminatorSteps = 100;
+            int discriminatorSteps = 5;
 
             var isSweepEnd = false;
             for (int epoch = 0; epoch < epochs;)
             {
+                var currentDiscriminatorSteps = epoch == 0 ? initialDiscriminatorSteps : discriminatorSteps;
                 for (int step = 0; step < discriminatorSteps; step++)
                 {
                     // Assign clipped parameters.
                     var parameters = discriminatorNetwork.Parameters();
                     for (int i = 0; i < parameters.Count; i++)
                     {
-                        var input = new Dictionary<Variable, Value>();
-                        var output = new Dictionary<Variable, Value>();
-                        CNTKLib.Assign(parameters[i], clippedDiscriminatorParameters[i])
-                            .Evaluate(input, output, device);
+                        var parameter = parameters[i];
+                        var parameterValue = new Value(parameter.GetValue());
+                        var clipped = clippedDiscriminatorParameters[i];
+                        var clippedValue = new Value(clipped.GetValue());
+
+                        var input = new Dictionary<Variable, Value>()
+                        { { parameter, parameterValue } };
+
+                        var output = new Dictionary<Variable, Value>()
+                        { { clipped, clippedValue } };
+
+                        CNTKLib.Assign(parameter, clipped).Evaluate(input, output, device);
                     }
 
                     // Discriminator needs both real images and noise, 
@@ -171,7 +187,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             // Show examples
             var app = new Application();
-            var window = new PlotWindowBitMap("Generated Images", imagesData, 28, 28, 1, true);
+            var window = new PlotWindowBitMap("Generated Images", imagesData, 32, 32, 3, true);
             window.Show();
             app.Run(window);
         }
@@ -199,7 +215,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             Trace.Write(Model.Summary(generatorNetwork));
 
-            return generatorNetwork.Reshape(NDShape.CreateNDShape(new int[] { 784 }));
+            return generatorNetwork.Reshape(NDShape.CreateNDShape(new int[] { 32 * 32 * 3 }));
         }
 
         Function Discriminator(Function input, Func<CNTKDictionary> weightInit, CNTKDictionary biasInit,
