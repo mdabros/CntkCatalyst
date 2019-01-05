@@ -101,7 +101,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var clippedDiscriminatorParameters = discriminatorNetwork.Parameters()
                 .Select(p => CNTKLib.Clip(p, minClip, maxClip))
                 .Select(f => f.Parameters().Single())
-                .ToList();
+                .ToList(); // Currently nothing is evaluated, so no clipping occurs.
 
             var discriminatorLearner = Learners.Adam(discriminatorNetwork.Parameters(),
                 learningRate: 0.00005, momentum: 0.0, varianceMomentum: 0.999, unitGain: false);
@@ -118,14 +118,14 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // We want to train the discriminator until it can closely estimate the EM distance. 
             // In order to make sure that the discriminator has a sufficient good estimation at the very beginning of the training, 
             // we even train it for 100 iterations before train the generator.
-            int initialDiscriminatorSteps = 10;
+            int initialDiscriminatorSteps = 100;
             int discriminatorSteps = 5;
 
             var isSweepEnd = false;
             for (int epoch = 0; epoch < epochs;)
             {
                 var currentDiscriminatorSteps = epoch == 0 ? initialDiscriminatorSteps : discriminatorSteps;
-                for (int step = 0; step < discriminatorSteps; step++)
+                for (int step = 0; step < currentDiscriminatorSteps; step++)
                 {
                     // Assign clipped parameters.
                     var parameters = discriminatorNetwork.Parameters();
@@ -133,8 +133,12 @@ namespace CntkCatalyst.Examples.GenerativeModels
                     {
                         var parameter = parameters[i];
                         var parameterValue = new Value(parameter.GetValue());
+
                         var clipped = clippedDiscriminatorParameters[i];
                         var clippedValue = new Value(clipped.GetValue());
+                        // temp output of values for inspection.
+                        var p = parameterValue.GetDenseData<float>(parameter);
+                        var c = clippedValue.GetDenseData<float>(parameter);
 
                         var input = new Dictionary<Variable, Value>()
                         { { parameter, parameterValue } };
@@ -160,6 +164,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
                 generatorFitter.FitNextStep(noiseMinibatchItems.minibatch, batchSize);
                 DisposeValues(noiseMinibatchItems.minibatch);
+
+                // Temp trace of loss pr. minibatch.
+                Trace.WriteLine($"Generator Loss = {generatorFitter.CurrentLoss:F8}, Discriminator Loss = {discriminatorFitter.CurrentLoss:F8}");
 
                 if (isSweepEnd)
                 {
