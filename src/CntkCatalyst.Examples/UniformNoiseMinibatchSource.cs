@@ -10,13 +10,16 @@ namespace CntkCatalyst.Examples
         readonly float m_min;
         readonly float m_max;
         readonly Random m_random;
+        readonly SampleRandomUniform m_sample;
 
         readonly IDictionary<string, Variable> m_nameToVariable;
         readonly IDictionary<string, float[]> m_nameToData;
 
-        public UniformNoiseMinibatchSource(IDictionary<string, Variable> nameToVariable, float min, float max, int seed)
+        public UniformNoiseMinibatchSource(IDictionary<string, Variable> nameToVariable, float min, float max,
+            SampleRandomUniform sample, int seed)
         {
             m_nameToVariable = nameToVariable ?? throw new ArgumentNullException(nameof(nameToVariable));
+            m_sample = sample ?? throw new ArgumentNullException(nameof(sample));
 
             m_min = min;
             m_max = max;
@@ -46,7 +49,7 @@ namespace CntkCatalyst.Examples
 
                 for (int i = 0; i < data.Length; i++)
                 {
-                    data[i] = SampleRandomUniform();
+                    data[i] = m_sample(m_random, m_min, m_max);
                 }
                 
                 var value = Value.CreateBatch<float>(sampleShape, data, device);
@@ -59,11 +62,6 @@ namespace CntkCatalyst.Examples
             var isSweepEnd = false;
 
             return (minibatch, isSweepEnd);
-        }
-
-        float SampleRandomUniform()
-        {
-            return (float)m_random.NextDouble() * (m_max - m_min) + m_min;
         }
     }
 }

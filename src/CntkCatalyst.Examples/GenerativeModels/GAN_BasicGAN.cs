@@ -76,7 +76,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             // Create minibatch source for providing the noise.
             var noiseNameToVariable = new Dictionary<string, Variable> { { "noise", generatorInput } };
-            var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f, seed: random.Next());
+            var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f, 
+                sample: RandomExtensions.SampleRandomUniformF32, seed: random.Next());
             
             // Combine both sources in the composite minibatch source.
             var compositeMinibatchSource = new CompositeMinibatchSource(imageMinibatchSource, noiseMinibatchSource);

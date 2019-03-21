@@ -95,6 +95,7 @@
     <Compile Include="GenerativeModels\GAN_ConditionalDCGAN.cs" />
     <Compile Include="GenerativeModels\GAN_DCGAN.cs" />
     <Compile Include="GenerativeModels\GAN_BasicGAN.cs" />
+    <Compile Include="RandomExtensions.cs" />
     <Compile Include="UniformNoiseMinibatchSource.cs" />
     <Compile Include="ImageUtilities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
