@@ -91,15 +91,21 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var noiseNameToVariable = new Dictionary<string, Variable> { { "noise", generatorInput } };
             var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f,
                 sample: RandomExtensions.SampleRandomUniformF32, seed: random.Next());
-            
-            // Combine both sources in the composite minibatch source.
-            var compositeMinibatchSource = new CompositeMinibatchSource(imageMinibatchSource, noiseMinibatchSource);
 
-            // Setup generator loss: 1.0 - C.log(D_fake)
+            // TODO: This will not work since the code data needs to be in one-hot format.
+            var codeNameToVariable = new Dictionary<string, Variable> { { "code", generatorCode } };
+            var codeMinibatchSource = new UniformNoiseMinibatchSource(codeNameToVariable, min: 0f, max: 1.0f,
+                sample: RandomExtensions.SampleRandomUniformInt32, seed: random.Next());
+
+            // Combine both sources in the composite minibatch source.
+            var compositeMinibatchSource = new CompositeMinibatchSource(imageMinibatchSource, 
+                noiseMinibatchSource, codeMinibatchSource);
+
+            // Setup generator loss: 1.0 - C.log(D_fake).
             var generatorLossFunc = CNTKLib.Minus(Constant.Scalar(1.0f, device), 
                 CNTKLib.Log(discriminatorNetworkFake));
                         
-            // Setup discriminator loss: -(C.log(D_real) + C.log(1.0 - D_fake))
+            // Setup discriminator loss: -(C.log(D_real) + C.log(1.0 - D_fake)).
             var discriminatorLossFunc = CNTKLib.Negate(CNTKLib.Plus(CNTKLib.Log(discriminatorNetwork), 
                 CNTKLib.Log(CNTKLib.Minus(Constant.Scalar(1.0f, device), discriminatorNetworkFake))));
 
