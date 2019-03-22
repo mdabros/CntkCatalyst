@@ -12,7 +12,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
 {
     /// <summary>
     /// Example based on:
-    /// https://cntk.ai/pythondocs/CNTK_206B_DCGAN.html
+    /// https://github.com/astorfi/CNTK-World/blob/master/codes/Python/p04-advanced/1-conditional-DCGAN/conditional-DCGAN.py
     /// 
     /// Training follows the original paper relatively closely:
     /// Original GAN paper: https://arxiv.org/pdf/1406.2661v1.pdf
