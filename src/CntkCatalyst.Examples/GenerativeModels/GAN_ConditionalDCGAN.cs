@@ -85,14 +85,18 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 { "features", discriminatorInput },
                 { "labels", discriminatorCode }
             };
-            var imageMinibatchSource = CreateMinibatchSource(trainFilePath, imageNameToVariable, randomize: true);
+            var descriminatorMinibatchSource = CreateMinibatchSource(trainFilePath, imageNameToVariable, randomize: true);
 
             // Create minibatch source for providing the noise.
             var noiseNameToVariable = new Dictionary<string, Variable> { { "noise", generatorInput } };
             var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f, seed: random.Next());
-            
+
+            var codeNameToVariable = new Dictionary<string, Variable> { { "code", generatorCode } };
+            var codeMinibatchSource = new RandomOneHotMinibatchSource(codeNameToVariable, classCount: classCount, seed: random.Next());
+
             // Combine both sources in the composite minibatch source.
-            var compositeMinibatchSource = new CompositeMinibatchSource(imageMinibatchSource, noiseMinibatchSource);
+            var compositeMinibatchSource = new CompositeMinibatchSource(descriminatorMinibatchSource, 
+                noiseMinibatchSource, codeMinibatchSource);
 
             // Setup generator loss: 1.0 - C.log(D_fake).
             var generatorLossFunc = CNTKLib.Minus(Constant.Scalar(1.0f, device), 
@@ -158,12 +162,14 @@ namespace CntkCatalyst.Examples.GenerativeModels
             }
 
             // Sample 6x6 images from generator.
+            // Only use the noise and code generating minibatch sources.
+            var sampleMinibatchSource = new CompositeMinibatchSource(noiseMinibatchSource, codeMinibatchSource);
             var samples = 6 * 6;
-            var batch = noiseMinibatchSource.GetNextMinibatch(samples, device);
-            var noise = batch.minibatch;
+            var batch = sampleMinibatchSource.GetNextMinibatch(samples, device);
+            var noiseAndCode = batch.minibatch;
 
             var predictor = new Predictor(generatorNetwork, device);
-            var images = predictor.PredictNextStep(noise);
+            var images = predictor.PredictNextStep(noiseAndCode);
             var imagesData = images.SelectMany(t => t).ToArray();
 
             // Show examples
