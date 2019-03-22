@@ -85,7 +85,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 { "features", discriminatorInput },
                 { "labels", discriminatorCode }
             };
-            var descriminatorMinibatchSource = CreateMinibatchSource(trainFilePath, imageNameToVariable, randomize: true);
+            var imageAndLabelsMinibatchSource = CreateMinibatchSource(trainFilePath, imageNameToVariable, randomize: true);
 
             // Create minibatch source for providing the noise.
             var noiseNameToVariable = new Dictionary<string, Variable> { { "noise", generatorInput } };
@@ -94,8 +94,10 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var codeNameToVariable = new Dictionary<string, Variable> { { "code", generatorCode } };
             var codeMinibatchSource = new RandomOneHotMinibatchSource(codeNameToVariable, classCount: classCount, seed: random.Next());
 
+            var generatorMinibatchSource = new CompositeMinibatchSource(noiseMinibatchSource, codeMinibatchSource);
+
             // Combine both sources in the composite minibatch source.
-            var compositeMinibatchSource = new CompositeMinibatchSource(descriminatorMinibatchSource, 
+            var discriminatorMinibatchSource = new CompositeMinibatchSource(imageAndLabelsMinibatchSource, 
                 noiseMinibatchSource, codeMinibatchSource);
 
             // Setup generator loss: 1.0 - C.log(D_fake).
@@ -132,19 +134,19 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 {
                     // Discriminator needs both real images and noise, 
                     // so uses the composite minibatch source.
-                    var minibatchItems = compositeMinibatchSource.GetNextMinibatch(batchSize, device);
-                    isSweepEnd = minibatchItems.isSweepEnd;
+                    var discriminatorMinibatchItems = discriminatorMinibatchSource.GetNextMinibatch(batchSize, device);
+                    isSweepEnd = discriminatorMinibatchItems.isSweepEnd;
 
-                    discriminatorFitter.FitNextStep(minibatchItems.minibatch, batchSize);
-                    DisposeValues(minibatchItems.minibatch);
+                    discriminatorFitter.FitNextStep(discriminatorMinibatchItems.minibatch, batchSize);
+                    DisposeValues(discriminatorMinibatchItems.minibatch);
                 }
 
                 // Generator only needs noise images, 
                 // so uses the noise minibatch source separately.
-                var noiseMinibatchItems = noiseMinibatchSource.GetNextMinibatch(batchSize, device);
+                var generatorMinibatchItems = generatorMinibatchSource.GetNextMinibatch(batchSize, device);
 
-                generatorFitter.FitNextStep(noiseMinibatchItems.minibatch, batchSize);
-                DisposeValues(noiseMinibatchItems.minibatch);
+                generatorFitter.FitNextStep(generatorMinibatchItems.minibatch, batchSize);
+                DisposeValues(generatorMinibatchItems.minibatch);
 
                 if (isSweepEnd)
                 {
@@ -163,9 +165,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             // Sample 6x6 images from generator.
             // Only use the noise and code generating minibatch sources.
-            var sampleMinibatchSource = new CompositeMinibatchSource(noiseMinibatchSource, codeMinibatchSource);
             var samples = 6 * 6;
-            var batch = sampleMinibatchSource.GetNextMinibatch(samples, device);
+            var batch = generatorMinibatchSource.GetNextMinibatch(samples, device);
             var noiseAndCode = batch.minibatch;
 
             var predictor = new Predictor(generatorNetwork, device);
