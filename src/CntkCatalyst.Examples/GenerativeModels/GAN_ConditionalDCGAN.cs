@@ -89,17 +89,10 @@ namespace CntkCatalyst.Examples.GenerativeModels
 
             // Create minibatch source for providing the noise.
             var noiseNameToVariable = new Dictionary<string, Variable> { { "noise", generatorInput } };
-            var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f,
-                sample: RandomExtensions.SampleRandomUniformF32, seed: random.Next());
-
-            // TODO: This will not work since the code data needs to be in one-hot format.
-            var codeNameToVariable = new Dictionary<string, Variable> { { "code", generatorCode } };
-            var codeMinibatchSource = new UniformNoiseMinibatchSource(codeNameToVariable, min: 0f, max: 1.0f,
-                sample: RandomExtensions.SampleRandomUniformInt32, seed: random.Next());
-
+            var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f, seed: random.Next());
+            
             // Combine both sources in the composite minibatch source.
-            var compositeMinibatchSource = new CompositeMinibatchSource(imageMinibatchSource, 
-                noiseMinibatchSource, codeMinibatchSource);
+            var compositeMinibatchSource = new CompositeMinibatchSource(imageMinibatchSource, noiseMinibatchSource);
 
             // Setup generator loss: 1.0 - C.log(D_fake).
             var generatorLossFunc = CNTKLib.Minus(Constant.Scalar(1.0f, device), 
