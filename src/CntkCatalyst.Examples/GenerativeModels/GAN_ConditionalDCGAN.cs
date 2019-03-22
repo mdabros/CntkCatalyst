@@ -119,9 +119,9 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 learningRate: 0.0002, gradientClippingThresholdPerSample: 1.0);
             var discriminatorFitter = CreateFitter(discriminatorLearner, discriminatorNetwork, discriminatorLossFunc, device);
 
-            int epochs = 30;
-            int batchSize = 128;
-            
+            int epochs = 8;
+            int batchSize = 256;
+
             // Controls how many steps the discriminator takes, 
             // each time the generator takes 1 step.
             // Default from the original paper is 1.
