@@ -166,6 +166,7 @@ namespace CntkCatalyst.Examples.GenerativeModels
             // Sample 6x6 images from generator.
             // Only use the noise and code generating minibatch sources.
             var samples = 6 * 6;
+            // TODO: Use conditional part, and show examples from each class.
             var batch = generatorMinibatchSource.GetNextMinibatch(samples, device);
             var noiseAndCode = batch.minibatch;
 
