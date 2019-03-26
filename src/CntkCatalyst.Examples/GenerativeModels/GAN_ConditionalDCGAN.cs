@@ -92,7 +92,8 @@ namespace CntkCatalyst.Examples.GenerativeModels
             var noiseMinibatchSource = new UniformNoiseMinibatchSource(noiseNameToVariable, min: -1.0f, max: 1.0f, seed: random.Next());
 
             var codeNameToVariable = new Dictionary<string, Variable> { { "code", generatorCode } };
-            var codeMinibatchSource = new RandomOneHotMinibatchSource(codeNameToVariable, classCount: classCount, seed: random.Next());
+            var codeMinibatchSource = new RandomOneHotMinibatchSource(codeNameToVariable, classCount: classCount, 
+                minClassValue: 0, maxClassValue: 9, seed: random.Next());
 
             var generatorMinibatchSource = new CompositeMinibatchSource(noiseMinibatchSource, codeMinibatchSource);
 
@@ -163,20 +164,25 @@ namespace CntkCatalyst.Examples.GenerativeModels
                 }
             }
 
+            var classValue = 5;
+            var classNameToVariable = new Dictionary<string, Variable> { { "code", generatorCode } };
+            var classMinibatchSource = new RandomOneHotMinibatchSource(codeNameToVariable, classCount: classCount,
+                minClassValue: classValue, maxClassValue: classValue, seed: random.Next());
+            var sampleMinibatchSource = new CompositeMinibatchSource(noiseMinibatchSource, classMinibatchSource);
+                
             // Sample 6x6 images from generator.
             // Only use the noise and code generating minibatch sources.
             var samples = 6 * 6;
             // TODO: Use conditional part, and show examples from each class.
-            var batch = generatorMinibatchSource.GetNextMinibatch(samples, device);
+            var batch = sampleMinibatchSource.GetNextMinibatch(samples, device);
             var noiseAndCode = batch.minibatch;
 
             var predictor = new Predictor(generatorNetwork, device);
             var images = predictor.PredictNextStep(noiseAndCode);
             var imagesData = images.SelectMany(t => t).ToArray();
 
-            // Show examples
             var app = new Application();
-            var window = new PlotWindowBitMap("Generated Images", imagesData, 28, 28, 1, true);
+            var window = new PlotWindowBitMap($"Generated Images from class: {classValue}", imagesData, 28, 28, 1, true);
             window.Show();
             app.Run(window);
         }

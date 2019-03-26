@@ -8,16 +8,21 @@ namespace CntkCatalyst.Examples
     public class RandomOneHotMinibatchSource : IMinibatchSource
     {
         readonly int m_classCount;
+        readonly int m_minClassValue;
+        readonly int m_maxClassValue;
         readonly Random m_random;
 
         readonly IDictionary<string, Variable> m_nameToVariable;
         readonly IDictionary<string, float[]> m_nameToData;
 
-        public RandomOneHotMinibatchSource(IDictionary<string, Variable> nameToVariable, int classCount, int seed)
+        public RandomOneHotMinibatchSource(IDictionary<string, Variable> nameToVariable, int classCount,
+            int minClassValue, int maxClassValue, int seed)
         {
             m_nameToVariable = nameToVariable ?? throw new ArgumentNullException(nameof(nameToVariable));
 
             m_classCount = classCount;
+            m_minClassValue = minClassValue;
+            m_maxClassValue = maxClassValue;
 
             m_random = new Random(seed);
 
@@ -47,7 +52,8 @@ namespace CntkCatalyst.Examples
                 {
                     // Using one-hot encoding, so each minibatch sample
                     // will contain zeros and a single 1 indicating the class.
-                    var classValueIndex = m_random.Next(0, m_classCount);
+                    var inclusiveMaxClassValue = m_maxClassValue + 1;
+                    var classValueIndex = m_random.Next(m_minClassValue, inclusiveMaxClassValue);
                     var miniBatchIndex = i * sampleShape.TotalSize;
                     var classIndex = miniBatchIndex + classValueIndex;
                     data[classIndex] = 1;
