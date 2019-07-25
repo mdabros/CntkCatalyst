@@ -60,7 +60,7 @@ jobs:
       configuration: '$(buildConfiguration)'
       buildProperties: 'Platform=$(buildPlatform)'
       packDestination: '$(Build.ArtifactStagingDirectory)'
-      packagesToPack: 'src/**/*.csproj;!src/**/*.Test.csproj!src/**/*.Example.csproj'
+      packagesToPack: 'src/CntkCatalyst/CntkCatalyst.csproj'
     condition: and(succeeded(), eq(variables['buildConfiguration'], 'Release'))
     
   - task: NuGetCommand@2
