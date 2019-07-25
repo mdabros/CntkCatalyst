@@ -102,6 +102,7 @@
     <Compile Include="MemoryMinibatchData.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CntkCatalyst.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
