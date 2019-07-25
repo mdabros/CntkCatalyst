@@ -18,7 +18,7 @@ namespace CntkCatalyst.Test.Models
             var numberOfClasses = 10;
             var outputShape = new int[] { numberOfClasses };
 
-            (var observations, var targets) = CreateArtificialData(inputShape, outputShape, observationCount: 10000);
+            (var observations, var targets) = CreateArtificialData(inputShape, outputShape, observationCount: 100);
 
             var dataType = DataType.Float;
             var device = DeviceDescriptor.UseDefaultDevice();
@@ -64,7 +64,7 @@ namespace CntkCatalyst.Test.Models
 
             var trainSource = new MemoryMinibatchSource(nameToVariable, nameToData, seed: 232, randomize: true);
 
-            model.Fit(trainSource, batchSize: 32, epochs: 10);
+            model.Fit(trainSource, batchSize: 8, epochs: 2);
             
             (var loss, var metric) = model.Evaluate(trainSource);
 

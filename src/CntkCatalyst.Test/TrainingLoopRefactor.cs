@@ -11,7 +11,7 @@ namespace CntkCatalyst.Test.Models
     [TestClass]
     public class TrainingLoopRefactor
     {
-        [TestMethod]
+        //[TestMethod]
         public void Fitter_Loop()
         {
             var inputShape = new int[] { 28, 28, 1 };
